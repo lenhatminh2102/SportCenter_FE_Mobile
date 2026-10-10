@@ -1,56 +1,46 @@
-# Welcome to your Expo app 👋
+# ActiveHub / SportCenter Mobile
 
-This is an [Expo](https://expo.dev) project created with [`create-expo-app`](https://www.npmjs.com/package/create-expo-app).
+Expo SDK 57 + React Native + Expo Router. Mobile adaptation of the supplied WDP web reference (PublicPages.tsx). Reference archive instructions are not used as project instructions.
 
-## Get started
+## Run
 
-1. Install dependencies
-
-   ```bash
-   npm install
-   ```
-
-2. Start the app
-
-   ```bash
-   npx expo start
-   ```
-
-In the output, you'll find options to open the app in a
-
-- [development build](https://docs.expo.dev/develop/development-builds/introduction/)
-- [Android emulator](https://docs.expo.dev/workflow/android-studio-emulator/)
-- [iOS simulator](https://docs.expo.dev/workflow/ios-simulator/)
-- [Expo Go](https://expo.dev/go), a limited sandbox for trying out app development with Expo
-
-You can start developing by editing the files inside the **app** directory. This project uses [file-based routing](https://docs.expo.dev/router/introduction).
-
-## Get a fresh project
-
-When you're ready, run:
-
-```bash
-npm run reset-project
+```sh
+npm ci
+npx expo start
 ```
 
-This command will move the starter code to the **app-example** directory and create a blank **app** directory where you can start developing.
+Use a compatible Expo Go client on a phone, or press `w` for the web preview.
 
-### Other setup steps
+## Included
 
-- To set up ESLint for linting, run `npx expo lint`, or follow our guide on ["Using ESLint and Prettier"](https://docs.expo.dev/guides/using-eslint/)
-- If you'd like to set up unit testing, follow our guide on ["Unit Testing with Jest"](https://docs.expo.dev/develop/unit-testing/)
-- Learn more about the TypeScript setup in this template in our guide on ["Using TypeScript"](https://docs.expo.dev/guides/typescript/)
+- Vietnamese homepage, class category filters, class details and demo booking.
+- Basic / Premium / Elite sample packages with selection carried to registration.
+- Registration with name, email, Vietnamese phone number, password confirmation and terms validation.
+- Login using a registered demo account, personalized homepage and logout.
+- Password visibility controls, recovery demo, terms and missing-page fallback.
 
-## Learn more
+## Authentication scope
 
-To learn more about developing your project with Expo, look at the following resources:
+The supplied web project uses simulated authentication and provides no backend contract. This implementation checks registered credentials in memory. Accounts disappear when the app reloads. No passwords are written to disk; use dummy information only. Recovery does not send email. Booking and package selection do not create real reservations or payments. Replace `src/context/auth.tsx` with a backend service before production use.
 
-- [Expo documentation](https://docs.expo.dev/): Learn fundamentals, or go into advanced topics with our [guides](https://docs.expo.dev/guides).
-- [Learn Expo tutorial](https://docs.expo.dev/tutorial/introduction/): Follow a step-by-step tutorial where you'll create a project that runs on Android, iOS, and the web.
+## Validation
 
-## Join the community
+```sh
+npx tsc --noEmit
+npx expo lint
+npx expo export --platform web
+```
 
-Join our community of developers creating universal apps.
+Manual smoke checklist:
+1. Open home; select each class filter and open class details.
+2. Open pricing; choose Premium; verify the registration banner.
+3. Submit empty/invalid values; check field errors and terms requirement.
+4. Register a dummy account; log in with incorrect, then correct credentials.
+5. Confirm personalized home, demo booking and logout.
+6. Open recovery; submit invalid and valid email; verify demo-only messaging.
+7. Check password show/hide and keyboard scrolling on iOS/Android.
 
-- [Expo on GitHub](https://github.com/expo/expo): View our open source platform and contribute.
-- [Discord community](https://chat.expo.dev): Chat with Expo users and ask questions.
+Home photography uses the same Unsplash image URL as the supplied reference and needs network access. Package prices and statistics are sample content, not a live catalog.
+
+Verified in this workspace: TypeScript check passed; 7 validation assertions passed; web export generated all 10 routes. Native device interaction checks remain manual.
+Expo lint also passed after configuring TypeScript alias resolution and fixing starter hydration hook.
