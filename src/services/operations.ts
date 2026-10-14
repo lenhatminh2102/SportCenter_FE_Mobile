@@ -12,7 +12,7 @@ export function referenceLabel(value: unknown): string {
   return String(item.name || item.title || item.fullName || item.email || entityId(item) || 'Chưa có');
 }
 function fields(input: ResourceInput, keys: string[]) {
-  return Object.fromEntries(keys.filter(key => input[key] !== undefined).map(key => [key, typeof input[key] === 'string' ? input[key].trim() : input[key]]));
+  return Object.fromEntries(keys.filter(key => input[key] !== undefined && !(key === 'classId' && input[key] === '')).map(key => [key, typeof input[key] === 'string' ? input[key].trim() : input[key]]));
 }
 function crud(path: string, keys: string[], updateKeys = keys) {
   return {

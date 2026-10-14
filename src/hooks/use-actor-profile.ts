@@ -3,7 +3,7 @@ import { useAuth } from '@/context/auth';
 import { useApiQuery } from './use-api-query';
 import { coachesApi, referenceId, type Entity } from '@/services/operations';
 import { membersApi } from '@/services/members';
-export function useActorProfile() {
+export function useActorProfile(enabled = true) {
   const { user, token } = useAuth();
   const role = user?.role;
   const userId = user?.id;
@@ -14,5 +14,5 @@ export function useActorProfile() {
     if (!coach) throw new Error('Tài khoản chưa có hồ sơ huấn luyện viên. Liên hệ quản lý để tạo hồ sơ.');
     return coach;
   }, [token, role, userId]);
-  return useApiQuery(load, !!token && (role === 'MEMBER' || role === 'COACH'));
+  return useApiQuery(load, enabled && !!token && (role === 'MEMBER' || role === 'COACH'));
 }
