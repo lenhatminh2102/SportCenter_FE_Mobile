@@ -16,7 +16,8 @@ export default function Members() {
   const [search, setSearch] = useState('');
   const load = useCallback(() => membersApi.list(token!), [token]);
   const query = useApiQuery(load, !!token, false);
-  useFocusEffect(useCallback(() => { void query.reload(); }, [query.reload]));
+  const { reload } = query;
+  useFocusEffect(useCallback(() => { reload(); }, [reload]));
   const filtered = useMemo(() => (query.data || []).filter(member => `${member.fullName} ${member.phone}`.toLocaleLowerCase('vi').includes(search.trim().toLocaleLowerCase('vi'))), [query.data, search]);
   if (!user || !token) return <AccessScreen />;
   return <SafeAreaView style={ui.page}><FlatList
