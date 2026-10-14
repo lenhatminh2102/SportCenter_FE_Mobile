@@ -31,7 +31,8 @@ export function summarizeDashboard(role: StaffRole, userId: string, data: Dashbo
     { label: 'Học viên', value: plans && data.registrations && classes ? students.size : null, resource: 'workout-plans' },
     { label: 'Kế hoạch bản nháp', value: plans?.filter(item => item.status === 'DRAFT').length ?? null, resource: 'workout-plans' },
   ];
-  const sessions = (schedules || []).filter(item => String(item.date).slice(0, 10) >= today && item.status === 'SCHEDULED').sort((a, b) => `${String(a.date).slice(0, 10)} ${a.startTime}`.localeCompare(`${String(b.date).slice(0, 10)} ${b.startTime}`)).slice(0, 5);
+  const time = new Intl.DateTimeFormat('en-GB', { timeZone: 'Asia/Bangkok', hour: '2-digit', minute: '2-digit', hour12: false }).format(now);
+  const sessions = (schedules || []).filter(item => { const day = String(item.date).slice(0, 10); return item.status === 'SCHEDULED' && (day > today || day === today && String(item.startTime) >= time); }).sort((a, b) => `${String(a.date).slice(0, 10)} ${a.startTime}`.localeCompare(`${String(b.date).slice(0, 10)} ${b.startTime}`)).slice(0, 5);
   const ownPlanIds = new Set(plans?.map(entityId));
   const activity = role === 'CENTER_MANAGER' ? (data.logs || []).slice(0, 5) : (data.results || []).filter(item => ownPlanIds.has(referenceId(item.workoutPlanId))).slice(0, 5);
   const week = Array.from({ length: 7 }, (_, index) => {

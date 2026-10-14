@@ -1,7 +1,7 @@
 import { useCallback } from 'react';
 import { Pressable, RefreshControl, ScrollView, Text, View, useWindowDimensions } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
-import { Redirect, router } from 'expo-router';
+import { Redirect, router, useFocusEffect } from 'expo-router';
 import { useAuth } from '@/context/auth';
 import { useStaffShell } from '@/context/staff-shell';
 import { loadDashboard } from '@/services/dashboard';
@@ -17,7 +17,9 @@ export function Dashboard({ role }: { role: StaffRole }) {
   const inStaffShell = useStaffShell();
   const { width } = useWindowDimensions();
   const load = useCallback(() => loadDashboard(role, user!.id, token!), [role, user, token]);
-  const query = useApiQuery(load, user?.role === role && !!token);
+  const query = useApiQuery(load, user?.role === role && !!token, false);
+  const { reload } = query;
+  useFocusEffect(useCallback(() => { reload(); }, [reload]));
   if (!user || !token) return <AccessScreen />;
   if (user.role !== role) return isStaffRole(user.role) ? <Redirect href={roleHome(user.role)} /> : <AccessScreen denied />;
   const data = query.data;
