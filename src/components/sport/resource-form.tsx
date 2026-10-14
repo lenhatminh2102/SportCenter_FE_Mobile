@@ -10,7 +10,7 @@ export function ResourceForm({ resource, initial, token, userId, onSave, onSaved
   resource: ResourceKey; initial?: Entity; token: string; userId: string;
   onSave: (input: ResourceInput) => Promise<unknown>; onSaved: () => void;
 }) {
-  const [values, setValues] = useState(() => ({ ...initialValues(resource, initial), ...(resource === 'activity-logs' ? { userId } : {}) }));
+  const [values, setValues] = useState<Record<string, string>>(() => ({ ...initialValues(resource, initial), ...(resource === 'activity-logs' ? { userId } : {}) }));
   const [submitted, setSubmitted] = useState(false);
   const [busy, setBusy] = useState(false);
   const [error, setError] = useState('');
