@@ -83,3 +83,20 @@ A MEMBER starts with personal schedules, with an option to view all schedules. P
 Schedule input validates calendar dates (YYYY-MM-DD), 24-hour times and a later end time on the same day. Lesson order is sent as a positive integer. Deletion asks for confirmation and preserves backend conflict messages for referenced records. Role restrictions in UI supplement server authorization.
 
 Run `npm test` for Auth/Members/operations contract tests with mocked responses. Swagger contracts were checked against the running local backend. Successful live writes with manager/member accounts and native-device interaction still require manual testing; no production data was changed during checks.
+
+## Persons 4 and 5: 25 endpoints
+
+The operations hub now includes Classes (4), Class registrations (3), Attendances (4), Learning paths (4), Lesson progress (3), Workout plans (4) and Workout results (3). List/create/update/delete actions follow the available Swagger methods; registrations, progress and results do not expose a nonexistent DELETE endpoint.
+
+- CENTER_MANAGER: manage classes and learning paths; manage registrations, attendances and lesson progress.
+- RECEPTIONIST: manage registrations and attendances.
+- COACH: manage attendances, lesson progress, own workout plans and results for own plans.
+- MEMBER: view own participation/training data, create registrations, cancel own registrations, record own progress/results.
+
+Members' memberId and coaches' coachId are derived from their signed-in profile and locked in forms. Member lists for participation/training filter to their own profile; coach workout lists filter to their own plans. This is UI scoping, not a substitute for ownership checks on the backend.
+
+Class cards link to a preselected real registration form. New registrations are PENDING_PAYMENT and are not treated as paid/confirmed. Member cancellation sends PUT with CANCELLED after confirmation, without issuing a refund. Staff registration edits retain the backend-supported status choices. Workout-result memberId is taken from the selected plan; optional class links can be cleared. Source AI is a metadata choice, not an AI-generation feature.
+
+Open Account → Lịch tập, khóa học & trung tâm. Missing member profiles link to /profile; missing coach profiles require a manager to create them. Relation pickers use live backend lists. Backend errors remain visible, including duplicate registrations and dependency conflicts.
+
+Validation: 74 mocked API/permission/validation tests, TypeScript, Expo lint and web export. Successful writes with actual manager/coach/member accounts and device interaction still need live manual testing; existing backend data was not modified by these tests. Google OAuth setup and email OTP remain deferred.
