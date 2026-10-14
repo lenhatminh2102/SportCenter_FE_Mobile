@@ -2,8 +2,9 @@ import { useCallback, useMemo, useState } from 'react';
 import { FlatList, Text, View } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { Link, router, useFocusEffect, useLocalSearchParams } from 'expo-router';
+import { titleFor, detailFor } from '@/utils/resource-display';
 import { useAuth } from '@/context/auth';
-import { entityId, referenceLabel, resourceApis, schedulesApi, type Entity, type ResourceKey } from '@/services/operations';
+import { entityId, resourceApis, schedulesApi, type ResourceKey } from '@/services/operations';
 import { resources, isResource } from '@/utils/resources';
 import { canUseResource, isOwnRecord, personalResources } from '@/utils/resource-access';
 import { useActorProfile } from '@/hooks/use-actor-profile';
@@ -13,20 +14,6 @@ import { Brand, Button, Field, Screen } from '@/components/sport/ui';
 import { CancelRegistration } from '@/components/sport/cancel-registration';
 import { DeleteResource } from '@/components/sport/delete-resource';
 import { ui } from '@/components/sport/styles';
-function titleFor(resource: ResourceKey, item: Entity) {
-  if (resource === 'schedules') return `${String(item.date || '').slice(0, 10)} · ${String(item.startTime || '')} – ${String(item.endTime || '')}`;
-  return String(item[resources[resource].titleKey] || 'Chưa có tên');
-}
-function detailFor(resource: ResourceKey, item: Entity) {
-  switch (resource) {
-    case 'coaches': return String(item.phone || '');
-    case 'subjects': return 'Môn thể thao trên hệ thống';
-    case 'courses': return `${item.status === 'ACTIVE' ? 'Hoạt động' : 'Tạm dừng'}\n${String(item.description || '')}`;
-    case 'lessons': return `Bài ${String(item.order)} · ${referenceLabel(item.learningPathId)}\n${String(item.description || '')}`;
-    case 'schedules': return `${referenceLabel(item.classId)} · ${referenceLabel(item.lessonId)}\n${({ SCHEDULED: 'Đã lên lịch', COMPLETED: 'Hoàn thành', CANCELLED: 'Đã hủy' } as Record<string, string>)[String(item.status)] || String(item.status || '')}`;
-    case 'activity-logs': return `${referenceLabel(item.userId)}\n${item.createdAt ? new Date(String(item.createdAt)).toLocaleString('vi-VN', { timeZone: 'Asia/Bangkok' }) : ''}`;
-  }
-}
 function ResourceList({ resource }: { resource: ResourceKey }) {
   const { user, token } = useAuth();
   const definition = resources[resource];

@@ -9,7 +9,7 @@ export function referenceId(value: unknown): string {
 export function referenceLabel(value: unknown): string {
   if (!value || typeof value !== 'object') return typeof value === 'string' ? value : 'Chưa có';
   const item = value as Entity;
-  return String(item.name || item.title || item.fullName || item.email || entityId(item) || 'Chưa có');
+  return String(item.name || item.title || item.fullName || item.email || item.goal || entityId(item) || 'Chưa có');
 }
 function fields(input: ResourceInput, keys: string[]) {
   return Object.fromEntries(keys.filter(key => input[key] !== undefined && !(key === 'classId' && input[key] === '')).map(key => [key, typeof input[key] === 'string' ? input[key].trim() : input[key]]));
