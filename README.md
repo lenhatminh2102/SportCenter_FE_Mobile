@@ -64,3 +64,22 @@ Set EXPO_PUBLIC_GOOGLE_WEB_CLIENT_ID to your OAuth Web Client ID (matching backe
 Native sign-in uses @react-native-google-signin/google-signin and needs a development build, not Expo Go. Android needs an OAuth Android client matching your app package and signing SHA-1 in the same Google Cloud project. iOS needs EXPO_PUBLIC_GOOGLE_IOS_CLIENT_ID; app.config.ts adds the corresponding reversed URL scheme. Configure app package/bundle identifiers for your own Google project before building. No client secret belongs in the app. Without Client IDs, the UI explicitly reports that Google is not configured; email authentication remains available.
 
 Tests: node --test tests/auth-api.test.cjs. These verify API contracts and error/permission behavior with mocked responses. Live successful Google sign-in and native-device validation require the developer's OAuth configuration.
+
+## Persons 2 and 3: 23 endpoints
+
+Open Account → Lịch tập, khóa học & trung tâm to access all six groups. Every list uses real backend data, search, retry and pull-to-refresh. Manager accounts can create/update/delete; other authenticated roles can read, matching the supplied routes. Activity logs have list/create only.
+
+| Group | Endpoints | Screen |
+| --- | --- | --- |
+| Coaches | GET/POST /api/coaches; PUT/DELETE /api/coaches/{id} | /workspace/coaches |
+| Schedules | GET/POST /api/schedules; GET /api/schedules/my; PUT/DELETE /api/schedules/{id} | /workspace/schedules |
+| Activity logs | GET/POST /api/activity-logs | /workspace/activity-logs |
+| Subjects | GET/POST /api/subjects; PUT/DELETE /api/subjects/{id} | /workspace/subjects |
+| Courses | GET/POST /api/courses; PUT/DELETE /api/courses/{id} | /workspace/courses |
+| Lessons | GET/POST /api/lessons; PUT/DELETE /api/lessons/{id} | /workspace/lessons |
+
+A MEMBER starts with personal schedules, with an option to view all schedules. Personal schedules only include confirmed registrations. Creating a coach requires the User ID of an existing COACH account. Lesson and schedule forms provide searchable selectors using GET /api/learning-paths, GET /api/classes and GET /api/lessons for related records. These read-only lookups do not implement the remaining groups' management flows.
+
+Schedule input validates calendar dates (YYYY-MM-DD), 24-hour times and a later end time on the same day. Lesson order is sent as a positive integer. Deletion asks for confirmation and preserves backend conflict messages for referenced records. Role restrictions in UI supplement server authorization.
+
+Run `npm test` for Auth/Members/operations contract tests with mocked responses. Swagger contracts were checked against the running local backend. Successful live writes with manager/member accounts and native-device interaction still require manual testing; no production data was changed during checks.
