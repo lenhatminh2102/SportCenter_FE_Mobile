@@ -11,7 +11,11 @@ export const personalResources: ResourceKey[] = ['class-registrations', 'attenda
 export function isOwnRecord(resource: ResourceKey, role: string, actorId: string, item: Entity): boolean {
   if (!actorId) return false;
   if (role === 'MEMBER') return referenceId(item.memberId) === actorId;
-  if (role === 'COACH' && resource === 'workout-plans') return referenceId(item.coachId) === actorId;
+  if (role === 'COACH' && (resource === 'workout-plans' || resource === 'classes')) return referenceId(item.coachId) === actorId;
+  if (role === 'COACH' && resource === 'schedules') {
+    const classData = item.classId;
+    return !!classData && typeof classData === 'object' && referenceId((classData as Entity).coachId) === actorId;
+  }
   if (role === 'COACH' && resource === 'workout-results') {
     const plan = item.workoutPlanId;
     return !!plan && typeof plan === 'object' && referenceId((plan as Entity).coachId) === actorId;
