@@ -4,7 +4,8 @@ import { SafeAreaView } from 'react-native-safe-area-context';
 import { Link, router, useFocusEffect } from 'expo-router';
 import { useAuth } from '@/context/auth';
 import { membersApi, memberId } from '@/services/members';
-import { canManageMembers } from '@/utils/permissions';
+import { DeleteMember } from '@/components/sport/delete-member';
+import { canDeleteMembers, canManageMembers } from '@/utils/permissions';
 import { useApiQuery } from '@/hooks/use-api-query';
 import { AccessScreen, QueryStatus } from '@/components/sport/access';
 import { Brand, Button, Field } from '@/components/sport/ui';
@@ -24,6 +25,6 @@ export default function Members() {
     ListHeaderComponent={<View style={{ gap: 18, marginBottom: 20 }}><Brand /><Link href="/account" style={ui.link}>← Tài khoản</Link><Text style={ui.title}>Danh sách hội viên</Text><Text style={ui.body}>{query.data?.length ?? 0} hồ sơ trên hệ thống</Text>{canManageMembers(user.role) && <Button title="+ Thêm hồ sơ hội viên" onPress={() => router.push('/members/edit')} />}<Field label="Tìm hội viên" placeholder="Tên hoặc số điện thoại" value={search} onChangeText={setSearch} /><QueryStatus loading={query.loading} error={query.error} retry={() => void query.reload()} /></View>}
     ListEmptyComponent={!query.loading && !query.error ? <Text style={ui.body}>{search ? 'Không có kết quả phù hợp.' : 'Chưa có hồ sơ hội viên.'}</Text> : null}
     ItemSeparatorComponent={() => <View style={{ height: 14 }} />}
-    renderItem={({ item }) => <View style={ui.card}><Text style={ui.heading}>{item.fullName}</Text><Text selectable style={ui.body}>{item.phone}</Text><Text style={ui.body}>{levelLabels[item.level] || item.level} · {item.goal || 'Chưa có mục tiêu'}</Text><Text selectable style={[ui.body, { fontSize: 11 }]}>Mã hồ sơ: {memberId(item)}</Text>{canManageMembers(user.role) && <Button secondary title="Chỉnh sửa hồ sơ" onPress={() => router.push({ pathname: '/members/edit', params: { id: memberId(item) } })} />}</View>}
+    renderItem={({ item }) => <View style={ui.card}><Text style={ui.heading}>{item.fullName}</Text><Text selectable style={ui.body}>{item.phone}</Text><Text style={ui.body}>{levelLabels[item.level] || item.level} · {item.goal || 'Chưa có mục tiêu'}</Text><Text selectable style={[ui.body, { fontSize: 11 }]}>Mã hồ sơ: {memberId(item)}</Text>{canManageMembers(user.role) && <Button secondary title="Chỉnh sửa hồ sơ" onPress={() => router.push({ pathname: '/members/edit', params: { id: memberId(item) } })} />}{canDeleteMembers(user.role) && <DeleteMember member={item} token={token} onDeleted={() => void query.reload()} />}</View>}
   /></SafeAreaView>;
 }
