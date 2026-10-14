@@ -9,17 +9,24 @@ function modules(fetch) {
     if (cache[name]) return cache[name];
     const context = { exports: {}, fetch, process: { env: {} }, AbortController, setTimeout, clearTimeout, TypeError, require: dependency => {
       if (dependency === 'react-native') return { Platform: { OS: 'web' } };
-      const aliases = { './api': 'src/services/api.ts', './validation': 'src/utils/validation.ts', '@/services/operations': 'src/services/operations.ts' };
+      const aliases = { './api': 'src/services/api.ts', './validation': 'src/utils/validation.ts', './training-resources': 'src/utils/training-resources.ts', '@/services/operations': 'src/services/operations.ts' };
       return load(aliases[dependency]);
     } };
     cache[name] = context.exports;
     vm.runInNewContext(ts.transpileModule(fs.readFileSync(name, 'utf8'), { compilerOptions: { module: ts.ModuleKind.CommonJS } }).outputText, context);
     return context.exports;
   }
-  return { operations: load('src/services/operations.ts'), schema: load('src/utils/resources.ts'), api: load('src/services/api.ts') };
+  return { operations: load('src/services/operations.ts'), schema: load('src/utils/resources.ts'), api: load('src/services/api.ts'), access: load('src/utils/resource-access.ts') };
 }
 const id = '507f1f77bcf86cd799439011';
 const samples = {
+  classes: { name: 'Yoga Class', subjectId: id, courseId: id, coachId: id },
+  'class-registrations': { classId: id, memberId: id, status: 'CANCELLED' },
+  attendances: { memberId: id, classId: id, lessonId: id, date: '2026-10-14', status: 'PRESENT' },
+  'learning-paths': { courseId: id, name: 'Yoga Path', description: 'Basics' },
+  'lesson-progress': { memberId: id, lessonId: id, status: 'COMPLETED' },
+  'workout-plans': { coachId: id, memberId: id, classId: id, goal: 'Fitness', level: 'BEGINNER', plan: 'Squat 3x10', source: 'COACH', status: 'DRAFT' },
+  'workout-results': { workoutPlanId: id, memberId: id, result: 'Completed', comment: 'Good' },
   coaches: { userId: id, fullName: 'Coach Test', phone: '0901234567' },
   subjects: { name: 'Yoga' },
   courses: { name: 'Yoga Basics', description: 'Intro', status: 'ACTIVE' },
@@ -28,7 +35,7 @@ const samples = {
   'activity-logs': { userId: id, action: 'Created a lesson' },
 };
 for (const resource of Object.keys(samples)) {
-  const methods = resource === 'activity-logs' ? ['list', 'create'] : ['list', 'create', 'update', 'remove'];
+  const methods = resource === 'activity-logs' ? ['list', 'create'] : ['class-registrations', 'lesson-progress', 'workout-results'].includes(resource) ? ['list', 'create', 'update'] : ['list', 'create', 'update', 'remove'];
   for (const method of methods) test(`${resource}.${method} matches Swagger contract`, async () => {
     const { operations } = modules(async (url, options) => {
       assert.equal(url, `http://localhost:5000/api/${resource}${method === 'update' || method === 'remove' ? '/record%2Fid' : ''}`);
@@ -36,6 +43,7 @@ for (const resource of Object.keys(samples)) {
       assert.equal(options.headers.Authorization, 'Bearer test-token');
       if (method === 'create' || method === 'update') {
         const expected = { ...samples[resource] };
+        if (resource === 'class-registrations' && method === 'create') delete expected.status;
         if (resource === 'coaches' && method === 'update') delete expected.userId;
         assert.deepEqual(JSON.parse(options.body), expected);
       } else assert.equal(options.body, undefined);
@@ -94,4 +102,37 @@ test('populated and missing references normalize safely', () => {
 test('server dependency conflict remains visible with HTTP status', async () => {
   const { operations, api } = modules(async () => ({ ok: false, status: 409, json: async () => ({ success: false, message: 'Course is being used by a learning path' }) }));
   await assert.rejects(operations.coursesApi.remove('token', id), error => error instanceof api.ApiError && error.status === 409 && /learning path/.test(error.message));
+});
+
+test('training actions match role-specific backend routes', () => {
+  const { access } = modules();
+  assert.equal(access.canUseResource('workout-plans', 'CENTER_MANAGER', 'create'), false);
+  assert.equal(access.canUseResource('workout-plans', 'COACH', 'create', undefined, id), true);
+  assert.equal(access.canUseResource('attendances', 'RECEPTIONIST', 'remove'), true);
+  assert.equal(access.canUseResource('attendances', 'MEMBER', 'create', undefined, id), false);
+  assert.equal(access.canUseResource('lesson-progress', 'COACH', 'update'), true);
+  assert.equal(access.canUseResource('workout-results', 'CENTER_MANAGER', 'create'), false);
+  for (const key of ['class-registrations', 'lesson-progress', 'workout-results']) assert.equal(access.canUseResource(key, 'CENTER_MANAGER', 'remove'), false);
+});
+test('members cannot edit records belonging to other members', () => {
+  const { access } = modules();
+  assert.equal(access.canUseResource('lesson-progress', 'MEMBER', 'update', { memberId: { _id: id } }, id), true);
+  assert.equal(access.canUseResource('lesson-progress', 'MEMBER', 'update', { memberId: 'another-member' }, id), false);
+  assert.equal(access.canUseResource('class-registrations', 'MEMBER', 'create'), false);
+  assert.equal(access.isOwnRecord('workout-plans', 'COACH', id, { coachId: { _id: id } }), true);
+  assert.equal(access.isOwnRecord('workout-results', 'COACH', id, { workoutPlanId: { coachId: { _id: id } } }), true);
+});
+test('registration status is excluded on creation and validated on update', () => {
+  const { schema } = modules();
+  const form = { classId: id, memberId: id, status: 'CONFIRMED' };
+  assert.equal(schema.validateResource('class-registrations', form, false).payload.status, undefined);
+  assert.equal(schema.validateResource('class-registrations', form, true).payload.status, 'CONFIRMED');
+  assert.ok(schema.validateResource('lesson-progress', { memberId: id, lessonId: id, status: 'FORGED' }, false).errors.status);
+});
+test('optional workout class can be cleared without sending an invalid ObjectId', async () => {
+  const { operations } = modules(async (url, options) => {
+    assert.equal(JSON.parse(options.body).classId, undefined);
+    return { ok: true, status: 200, json: async () => ({ success: true, data: {} }) };
+  });
+  await operations.workoutPlansApi.update('token', id, { ...samples['workout-plans'], classId: '' });
 });
