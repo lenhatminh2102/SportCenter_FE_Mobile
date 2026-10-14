@@ -6,9 +6,9 @@ import { ui } from '@/components/sport/styles';
 import { classes, colors } from '@/data/sport';
 import { useAuth } from '@/context/auth';
 export default function Home() {
-  const { user, logout } = useAuth();
+  const { user } = useAuth();
   const [category, setCategory] = useState('Tất cả');
-  return <Screen><View style={ui.between}><Brand /><Pressable accessibilityRole="button" onPress={() => user ? (logout(), router.replace('/')) : router.push('/login')} style={{ paddingVertical: 12 }}><Text style={ui.link}>{user ? 'Đăng xuất' : 'Đăng nhập →'}</Text></Pressable></View>
+  return <Screen><View style={ui.between}><Brand /><Pressable accessibilityRole="button" onPress={() => router.push(user ? '/account' : '/login')} style={{ paddingVertical: 12 }}><Text style={ui.link}>{user ? 'Tài khoản →' : 'Đăng nhập →'}</Text></Pressable></View>
     <View style={{ backgroundColor: colors.pale, borderRadius: 24, padding: 24, gap: 18 }}><Text style={ui.eyebrow}>MOVE BETTER. LIVE BETTER.</Text><Text style={[ui.title, { fontSize: 36, lineHeight: 44 }]}>{user ? `Chào ${user.name}!` : 'Khỏe hơn mỗi ngày.\nCùng ActiveHub.'}</Text><Text style={ui.body}>{user ? `Đã đăng nhập với ${user.email}. Sẵn sàng cho buổi tập tiếp theo?` : 'Một nơi cho mọi mục tiêu tập luyện. Khám phá lớp học, chọn gói phù hợp và bắt đầu hành trình của bạn.'}</Text><Button title={user ? 'Khám phá gói tập' : 'Bắt đầu ngay →'} onPress={() => router.push(user ? '/pricing' : '/register')} /><Button secondary title="Xem các gói tập" onPress={() => router.push('/pricing')} /><Image accessibilityLabel="Không gian tập luyện thể thao" source={{ uri: 'https://images.unsplash.com/photo-1606335544665-96055053b5c0?auto=format&fit=crop&w=900&q=80' }} style={{ width: '100%', height: 200, borderRadius: 16, backgroundColor: '#dbe3ef' }} /></View>
     <View style={[ui.card, ui.between]}>{[['1.200+', 'Hội viên'], ['32+', 'Lớp học'], ['20+', 'Huấn luyện viên']].map(([number, label]) => <View key={label} style={{ flex: 1, gap: 5 }}><Text style={[ui.heading, { color: colors.primary }]}>{number}</Text><Text style={{ color: colors.muted, fontSize: 11 }}>{label}</Text></View>)}</View>
     <View style={{ gap: 8 }}><Text style={ui.eyebrow}>TÌM NHỊP TẬP CỦA BẠN</Text><Text style={ui.heading}>Lớp học nổi bật</Text><Text style={ui.body}>Dữ liệu minh họa từ bản thiết kế web.</Text></View>
