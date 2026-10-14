@@ -1,6 +1,6 @@
 import { useCallback, useEffect, useRef, useState } from 'react';
 import { ApiError } from '@/services/api';
-export function useApiQuery<T>(loader: () => Promise<T>, enabled = true) {
+export function useApiQuery<T>(loader: () => Promise<T>, enabled = true, autoLoad = true) {
   const [state, setState] = useState<{ data: T | null; error: Error | null; loading: boolean }>({ data: null, error: null, loading: enabled });
   const sequence = useRef(0);
   const reload = useCallback(async () => {
@@ -14,6 +14,6 @@ export function useApiQuery<T>(loader: () => Promise<T>, enabled = true) {
       if (sequence.current === version) setState({ data: null, error: error instanceof Error ? error : new Error('Yêu cầu thất bại.'), loading: false });
     }
   }, [loader, enabled]);
-  useEffect(() => { void reload(); return () => { sequence.current++; }; }, [reload]);
+  useEffect(() => { if (autoLoad) void reload(); return () => { sequence.current++; }; }, [reload, autoLoad]);
   return { ...state, reload, missing: state.error instanceof ApiError && state.error.status === 404 };
 }
