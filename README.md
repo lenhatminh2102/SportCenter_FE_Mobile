@@ -1,46 +1,38 @@
 # ActiveHub / SportCenter Mobile
 
-Expo SDK 57 + React Native + Expo Router. Mobile adaptation of the supplied WDP web reference (PublicPages.tsx). Reference archive instructions are not used as project instructions.
+Expo SDK 57, React Native and Expo Router. Vietnamese mobile homepage with registration and login connected to SportCenter API.
 
 ## Run
 
 ```sh
 npm ci
+# Copy .env.example to .env.local and configure the backend origin.
 npx expo start
 ```
 
-Use a compatible Expo Go client on a phone, or press `w` for the web preview.
+Set EXPO_PUBLIC_API_URL without /api or /api-docs:
+- Web / iOS simulator: http://localhost:5000
+- Android emulator: http://10.0.2.2:5000
+- Physical phone: http://<computer-LAN-IP>:5000 on the same Wi-Fi; backend must accept LAN connections.
 
-## Included
+Restart Expo after changing environment settings. Without an override, web/iOS use localhost and Android uses 10.0.2.2. Use HTTPS for deployed environments.
 
-- Vietnamese homepage, class category filters, class details and demo booking.
-- Basic / Premium / Elite sample packages with selection carried to registration.
-- Registration with name, email, Vietnamese phone number, password confirmation and terms validation.
-- Login using a registered demo account, personalized homepage and logout.
-- Password visibility controls, recovery demo, terms and missing-page fallback.
+## Authentication
 
-## Authentication scope
+- POST /api/auth/register sends email, password, role: MEMBER.
+- POST /api/auth/login sends email/password and reads data.token.
+- GET /api/auth/me sends Authorization: Bearer <token> and populates the homepage.
+- Failed requests show server errors; requests time out after 15 seconds. Submission buttons are disabled while waiting.
+- Token lives only in memory and is cleared on logout or reload. Passwords are not saved locally.
+- Backend accepts only email/password/role for registration, so the form does not collect unsupported profile fields.
 
-The supplied web project uses simulated authentication and provides no backend contract. This implementation checks registered credentials in memory. Accounts disappear when the app reloads. No passwords are written to disk; use dummy information only. Recovery does not send email. Booking and package selection do not create real reservations or payments. Replace `src/context/auth.tsx` with a backend service before production use.
+Package selection, class booking and recovery remain demo features. Registration does not purchase a package or send a recovery email. Homepage prices, classes and statistics remain sample content.
 
-## Validation
+## Checks
 
 ```sh
 npx tsc --noEmit
 npx expo lint
-npx expo export --platform web
 ```
 
-Manual smoke checklist:
-1. Open home; select each class filter and open class details.
-2. Open pricing; choose Premium; verify the registration banner.
-3. Submit empty/invalid values; check field errors and terms requirement.
-4. Register a dummy account; log in with incorrect, then correct credentials.
-5. Confirm personalized home, demo booking and logout.
-6. Open recovery; submit invalid and valid email; verify demo-only messaging.
-7. Check password show/hide and keyboard scrolling on iOS/Android.
-
-Home photography uses the same Unsplash image URL as the supplied reference and needs network access. Package prices and statistics are sample content, not a live catalog.
-
-Verified in this workspace: TypeScript check passed; 7 validation assertions passed; web export generated all 10 routes. Native device interaction checks remain manual.
-Expo lint also passed after configuring TypeScript alias resolution and fixing starter hydration hook.
+Smoke flow: register a test account, log in, confirm homepage email, log out. Check wrong credentials, duplicate email and unavailable backend. Physical-device UI checks remain manual.
