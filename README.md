@@ -100,3 +100,15 @@ Class cards link to a preselected real registration form. New registrations are 
 Open Account → Lịch tập, khóa học & trung tâm. Missing member profiles link to /profile; missing coach profiles require a manager to create them. Relation pickers use live backend lists. Backend errors remain visible, including duplicate registrations and dependency conflicts.
 
 Validation: 74 mocked API/permission/validation tests, TypeScript, Expo lint and web export. Successful writes with actual manager/coach/member accounts and device interaction still need live manual testing; existing backend data was not modified by these tests. Google OAuth setup and email OTP remain deferred.
+
+## Coach and manager dashboards
+
+Staff logins now go through /dashboard and redirect by authenticated role: COACH → /coach, CENTER_MANAGER → /manager; other roles retain /account. Direct access to the opposite staff dashboard redirects to the correct one, and non-staff users cannot access staff dashboards.
+
+A role-specific sidebar stays visible throughout account, members and workspace pages. At widths below 1000 px, use the menu button to open a dismissible drawer; on larger screens it is fixed. The active menu entry, account shortcut and logout remain available. Public pages retain their existing layout.
+
+Manager overview: real member/coach/class counts, pending-payment registrations, a 7-day schedule chart, upcoming sessions and recent activity logs. Coach overview: own teaching sessions/classes, distinct students from own plans and confirmed registrations, draft plans, upcoming teaching sessions and results linked to own plans. Coach Classes and Schedules pages now scope to their own coach profile.
+
+Dashboard requests run in parallel and refresh when the page regains focus or on pull-to-refresh. Missing datasets show — instead of invented zero totals, with source-specific errors. Dates use Asia/Bangkok; cancelled and already-started sessions are excluded from the upcoming list. No revenue numbers are fabricated. A coach without a matching coach profile sees an actionable error.
+
+`npm test` includes dashboard summary, date, partial-failure and staff-navigation tests. Native drawer gestures/device layout and successful staff login still require manual testing with real staff accounts. Sessions remain in-memory as before.
