@@ -1,8 +1,10 @@
+import { trainingResources } from './training-resources';
 import { validPhone } from './validation';
 import { referenceId, type Entity, type ResourceInput, type ResourceKey } from '@/services/operations';
-export type FormField = { key: string; label: string; required?: boolean; type?: 'id' | 'phone' | 'number' | 'date' | 'time' | 'multiline'; options?: { value: string; label: string }[]; createOnly?: boolean; relation?: string };
-type ResourceDefinition = { title: string; singular: string; titleKey: string; fields: FormField[] };
+export type FormField = { key: string; label: string; required?: boolean; type?: 'id' | 'phone' | 'number' | 'date' | 'time' | 'multiline'; options?: { value: string; label: string }[]; createOnly?: boolean; updateOnly?: boolean; relation?: string };
+export type ResourceDefinition = { title: string; singular: string; titleKey: string; fields: FormField[] };
 export const resources: Record<ResourceKey, ResourceDefinition> = {
+  ...trainingResources,
   coaches: { title: 'Huấn luyện viên', singular: 'huấn luyện viên', titleKey: 'fullName', fields: [
     { key: 'userId', label: 'User ID tài khoản COACH đã đăng ký', type: 'id', required: true, createOnly: true },
     { key: 'fullName', label: 'Họ và tên', required: true }, { key: 'phone', label: 'Số điện thoại', type: 'phone', required: true },
@@ -42,7 +44,7 @@ export function validateResource(resource: ResourceKey, values: Record<string, s
   const errors: Record<string, string> = {};
   const payload: ResourceInput = {};
   for (const field of resources[resource].fields) {
-    if (editing && field.createOnly) continue;
+    if (editing && field.createOnly || !editing && field.updateOnly) continue;
     const value = (values[field.key] || '').trim();
     payload[field.key] = value;
     if (field.required && !value) errors[field.key] = 'Vui lòng nhập thông tin này.';
