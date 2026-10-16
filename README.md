@@ -99,7 +99,7 @@ Class cards link to a preselected real registration form. New registrations are 
 
 Open Account → Lịch tập, khóa học & trung tâm. Missing member profiles link to /profile; missing coach profiles require a manager to create them. Relation pickers use live backend lists. Backend errors remain visible, including duplicate registrations and dependency conflicts.
 
-Validation: 74 mocked API/permission/validation tests, TypeScript, Expo lint and web export. Successful writes with actual manager/coach/member accounts and device interaction still need live manual testing; existing backend data was not modified by these tests. Google OAuth setup and email OTP remain deferred.
+Validation: 74 mocked API/permission/validation tests, TypeScript, Expo lint and web export. Successful writes with actual manager/coach/member accounts and device interaction still need live manual testing; existing backend data was not modified by these tests. Google Sign-In and email OTP are now integrated; see docs/google-otp-setup.md for required OAuth/SMTP setup and live-test limitations.
 
 ## Coach and manager dashboards
 
@@ -112,3 +112,8 @@ Manager overview: real member/coach/class counts, pending-payment registrations,
 Dashboard requests run in parallel and refresh when the page regains focus or on pull-to-refresh. Missing datasets show — instead of invented zero totals, with source-specific errors. Dates use Asia/Bangkok; cancelled and already-started sessions are excluded from the upcoming list. No revenue numbers are fabricated. A coach without a matching coach profile sees an actionable error.
 
 `npm test` includes dashboard summary, date, partial-failure and staff-navigation tests. Native drawer gestures/device layout and successful staff login still require manual testing with real staff accounts. Sessions remain in-memory as before.
+
+## Figma UI and Google email OTP
+
+The public home, login/register and staff surfaces now follow the supplied src.zip design. Google sign-in supports the newer backend OTP challenge, verification and resend flow. See [setup and validation](docs/google-otp-setup.md). Real OAuth and email delivery require the developer client IDs and backend SMTP configuration.
+
