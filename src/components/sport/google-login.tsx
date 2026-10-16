@@ -26,8 +26,8 @@ export function GoogleLogin({ disabled, onBusyChange }: GoogleLoginProps) {
       const result = await GoogleSignin.signIn();
       if (!isSuccessResponse(result)) return;
       if (!result.data.idToken) throw new Error('Google chưa trả về ID token. Kiểm tra Web Client ID.');
-      await loginGoogle(result.data.idToken);
-      router.replace('/dashboard');
+      const next = await loginGoogle(result.data.idToken);
+      router.replace(next === 'otp' ? '/verify-otp' : '/dashboard');
     } catch (e) { setError(e instanceof Error ? e.message : 'Không đăng nhập được bằng Google.'); }
     finally { pending.current = false; setBusy(false); onBusyChange(false); }
   }

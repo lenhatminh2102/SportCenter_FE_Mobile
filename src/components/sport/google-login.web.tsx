@@ -33,7 +33,7 @@ export function GoogleLogin({ disabled, onBusyChange }: GoogleLoginProps) {
       if (disabled || pending.current) return;
       if (!result.credential) { setError('Google chưa trả về ID token.'); return; }
       pending.current = true; setBusy(true); onBusyChange(true); setError('');
-      try { await loginGoogle(result.credential); router.replace('/dashboard'); }
+      try { const next = await loginGoogle(result.credential); router.replace(next === 'otp' ? '/verify-otp' : '/dashboard'); }
       catch (e) { setError((e as Error).message); }
       finally { pending.current = false; setBusy(false); onBusyChange(false); }
     };
