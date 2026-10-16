@@ -74,7 +74,7 @@ test('Google exchanges an ID token rather than an access token', async () => {
   const api = client(async (url, options) => {
     assert.equal(url, 'http://localhost:5000/api/auth/google');
     assert.deepEqual(JSON.parse(options.body), { idToken: 'google-id-token' });
-    return { ok: true, status: 200, json: async () => ({ success: true, data: { token: 'session-token' } }) };
+    return { ok: true, status: 200, json: async () => ({ success: true, data: { token: 'session-token', user: { id: '1', email: 'test@example.com', role: 'MEMBER', status: 'ACTIVE' } } }) };
   });
   assert.equal((await api.authApi.google('google-id-token')).token, 'session-token');
 });
@@ -105,4 +105,39 @@ test('manager and receptionist permissions differ for deletion', () => {
   assert.equal(canManageMembers('RECEPTIONIST'), true);
   assert.equal(canDeleteMembers('RECEPTIONIST'), false);
   assert.equal(canDeleteMembers('CENTER_MANAGER'), true);
+});
+
+test('first Google login returns OTP challenge without an authenticated session', async () => {
+  const api = client(async () => ({ ok: true, status: 200, json: async () => ({ success: true, requiresOTP: true, data: { email: 'google@example.com', challengeToken: 'challenge-only' } }) }));
+  const next = await api.authApi.google('google-id-token');
+  assert.equal(next.requiresOTP, true); assert.equal(next.challengeToken, 'challenge-only'); assert.equal(next.token, undefined);
+});
+test('Google OTP flag is preserved from the response envelope', () => {
+  const api = client();
+  const next = api.parseGoogleAuth({ requiresOTP: true, data: { email: 'google@example.com', challengeToken: 'challenge', token: 'must-not-authenticate' } });
+  assert.equal(next.requiresOTP, true); assert.equal(next.token, undefined);
+  assert.throws(() => api.parseGoogleAuth({ requiresOTP: true, data: { email: 'google@example.com' } }), /OTP/);
+});
+test('Google OTP verification sends the challenge in JSON, never as bearer token', async () => {
+  const api = client(async (url, options) => {
+    assert.equal(url, 'http://localhost:5000/api/auth/google/verify-otp');
+    assert.equal(options.method, 'POST'); assert.equal(options.headers.Authorization, undefined);
+    assert.deepEqual(JSON.parse(options.body), { challengeToken: 'challenge', otp: '012345' });
+    return { ok: true, status: 200, json: async () => ({ success: true, data: { token: 'authenticated-session', user: { id: '1' } } }) };
+  });
+  assert.equal((await api.authApi.verifyGoogleOtp('challenge', '012345')).token, 'authenticated-session');
+});
+test('wrong OTP, expired challenge and resend cooldown remain visible', async () => {
+  for (const [status, message] of [[400, 'OTP is incorrect'], [401, 'Challenge token is invalid or expired'], [429, 'Please wait before requesting another OTP']]) {
+    const api = client(async () => ({ ok: false, status, json: async () => ({ success: false, message }) }));
+    const expiredSessions = []; api.onUnauthorized(token => expiredSessions.push(token));
+    await assert.rejects(api.authApi.verifyGoogleOtp('challenge', '123456'), error => error instanceof api.ApiError && error.status === status && error.message === message);
+    assert.deepEqual(expiredSessions, []);
+  }
+});
+test('already verified Google accounts receive a session directly', async () => {
+  const api = client(async () => ({ ok: true, status: 200, json: async () => ({ success: true, requiresOTP: false, data: { token: 'verified', user: { id: '1', email: 'google@example.com' } } }) }));
+  const next = await api.authApi.google('id-token');
+  assert.equal(next.requiresOTP, false); assert.equal(next.token, 'verified');
+  assert.throws(() => api.parseGoogleAuth({ data: {} }), /hợp lệ/);
 });
