@@ -1,4 +1,4 @@
-export const colors = { primary: '#1e40af', ink: '#15243b', muted: '#64748b', background: '#f6f8fc', border: '#dce3ee', pale: '#eaf0ff', green: '#15803d' };
+export const colors = { primary: '#f05a28', ink: '#211b18', muted: '#735f56', background: '#eadbd2', surface: '#f7eee8', public: '#fffaf6', border: '#dfcfc4', pale: '#fce5d9', green: '#15803d', sidebar: '#080808' };
 export const plans = [
   { name: 'Basic', price: '299.000', description: 'Khởi đầu thói quen khỏe mạnh', features: ['Truy cập phòng Gym', 'Lịch tập cá nhân', 'Theo dõi tiến độ'] },
   { name: 'Premium', price: '599.000', description: 'Tập luyện không giới hạn', features: ['Tất cả quyền lợi Basic', 'Yoga, Boxing và Pilates', 'Tư vấn cùng huấn luyện viên'] },
