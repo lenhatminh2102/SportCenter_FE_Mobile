@@ -2,9 +2,10 @@ import { useEffect, useRef, useState } from 'react';
 import { Text, View } from 'react-native';
 import { router } from 'expo-router';
 import { useAuth } from '@/context/auth';
+import { Button } from './ui';
 import { ui } from './styles';
 import type { GoogleLoginProps } from './google-login';
-type GoogleIdentity = { accounts: { id: { initialize: (options: { client_id: string; callback: (result: { credential?: string }) => void }) => void; renderButton: (node: HTMLElement, options: { theme: string; size: string; text: string }) => void } } };
+type GoogleIdentity = { accounts: { id: { initialize: (options: { client_id: string; callback: (result: { credential?: string }) => void }) => void; renderButton: (node: HTMLElement, options: { theme: string; size: string; text: string; shape: string; width: number; locale: string }) => void } } };
 let scriptPromise: Promise<GoogleIdentity> | null = null;
 function loadGoogle(): Promise<GoogleIdentity> {
   if (scriptPromise) return scriptPromise;
@@ -44,9 +45,9 @@ export function GoogleLogin({ disabled, onBusyChange }: GoogleLoginProps) {
     void loadGoogle().then(google => {
       if (!active || !host.current) return;
       google.accounts.id.initialize({ client_id: clientId, callback: result => credentialHandler.current(result) });
-      google.accounts.id.renderButton(host.current, { theme: 'outline', size: 'large', text: 'continue_with' });
+      google.accounts.id.renderButton(host.current, { theme: 'outline', size: 'large', text: 'continue_with', shape: 'pill', width: Math.min(400, host.current.clientWidth || 320), locale: 'vi' });
     }).catch(e => { if (active) setError((e as Error).message); });
     return () => { active = false; };
   }, [clientId]);
-  return <View style={{ gap: 10 }}>{clientId ? <div ref={host} aria-disabled={disabled || busy} style={{ pointerEvents: disabled || busy ? 'none' : 'auto', opacity: disabled || busy ? 0.5 : 1, minHeight: 44 }} /> : <Text style={[ui.body, { fontSize: 12 }]}>Đăng nhập Google chưa được cấu hình Client ID.</Text>}{busy && <Text style={ui.body}>Đang kết nối Google…</Text>}{!!error && <Text accessibilityRole="alert" style={ui.error}>{error}</Text>}</View>;
+  return <View style={{ gap: 10 }}>{clientId ? <div ref={host} aria-disabled={disabled || busy} style={{ pointerEvents: disabled || busy ? 'none' : 'auto', opacity: disabled || busy ? 0.5 : 1, minHeight: 44 }} /> : <><Button secondary title="G · Tiếp tục với Google" disabled onPress={() => {}} /><Text style={[ui.body, { fontSize: 12 }]}>Đăng nhập Google đang chờ cấu hình.</Text></>}{busy && <Text style={ui.body}>Đang kết nối Google…</Text>}{!!error && <Text accessibilityRole="alert" style={ui.error}>{error}</Text>}</View>;
 }
