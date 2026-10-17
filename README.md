@@ -190,3 +190,13 @@ Coach dashboard and /coach-students now display real member fullName for both PE
 The supplied /coaches/my-students remains confirmed-only for attendance/progress assignment permissions. The display roster uses existing coach profile, classes and populated registration APIs. Pending records are not promoted to confirmed students. Missing names have an unavailable label rather than raw IDs. Backend record authorization remains separate from UI filtering.
 
 Validation: 129 tests pass, including own-class scoping, pending/confirmed names, cancelled exclusion and distinct counting; lint, TypeScript and web export pass. Live account and native-device verification remain manual.
+
+## Coach subject and day-specific attendance
+
+Coach resource pages now scope subjects, courses, paths and lessons through assigned classes and course/path IDs, not name matching. Progress lesson pickers use that same scope and revalidate it before saving.
+
+The coach attendance editor now has a dedicated flow: choose an assigned class → see today's schedule (or choose another scheduled day) → select a session → select a confirmed member of that class → save PRESENT/ABSENT. Lesson/date/time/room come from the schedule; there is no global lesson picker. Existing attendance for the session is loaded to prevent duplicate entry. New coach records use POST /api/attendances/coach with memberId, scheduleId and status, letting BE derive the lesson and date. Existing edits retain the original member/class/day and use the update endpoint. Context is refreshed before saving.
+
+Dashboard day bars open schedules filtered to that date. Upcoming session cards and schedule rows open attendance with schedule/class/date preselected. Class cards offer today's timetable. Context changes remount the editor so a different day cannot retain prior form defaults. Managers/receptionists retain their authorized generic editor.
+
+Validation: 133 tests pass, including assigned-course lesson filtering, class/day schedule matching, cancelled session exclusion, correct member filtering and the coach attendance API payload. Lint, TypeScript and web export pass; actual account/device attendance submission remains manual.

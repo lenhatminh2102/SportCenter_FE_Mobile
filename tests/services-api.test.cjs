@@ -30,6 +30,8 @@ const cases = [
   ['operations', 'coachesApi', 'me', [], '/coaches/me', 'GET', undefined],
   ['operations', 'coachesApi', 'myStudents', [], '/coaches/my-students', 'GET', undefined],
   ['operations', 'schedulesApi', 'coachMy', [], '/schedules/coach/my', 'GET', undefined],
+  ['coach-teaching', 'coachAttendanceApi', 'create', ['m', 's', 'PRESENT'], '/attendances/coach', 'POST', { memberId: 'm', scheduleId: 's', status: 'PRESENT' }],
+  ['coach-teaching', 'coachAttendanceApi', 'bySchedule', ['s/id'], '/attendances/schedule/s%2Fid', 'GET', undefined],
   ['rooms', 'roomsApi', 'get', ['a/b'], '/rooms/a%2Fb', 'GET', undefined],
 ];
 for (const [service, api, method, args, suffix, verb, body] of cases) test(`${service}.${method} sends correct auth and payload`, async () => {
@@ -184,4 +186,20 @@ test('coach roster counts repeat students by member and avoids exposing raw IDs 
   const rows = buildCoachRoster([{ _id: 'a', classId: 'a', memberId: 'm', status: 'PENDING_PAYMENT' }, { _id: 'b', classId: 'b', memberId: { _id: 'm', fullName: 'Member' }, status: 'CONFIRMED' }], [{ _id: 'a', coachId: 'c' }, { _id: 'b', coachId: 'c' }], 'c');
   assert.equal(rows.length, 2); assert.equal(new Set(rows.map(item => item.memberId)).size, 1);
   assert.equal(coachStudentName(rows[0]), 'Chưa tải được tên hội viên');
+});
+
+test('coach lessons and subject information follow assigned class/course relations', () => {
+  const scope = loadService('../utils/coach-teaching');
+  const classes = [{ _id: 'c', subjectId: 'badminton', courseId: { _id: 'badminton-course' } }];
+  const paths = [{ _id: 'badminton-path', courseId: 'badminton-course' }, { _id: 'yoga-path', courseId: 'yoga-course' }];
+  assert.deepEqual(Array.from(scope.scopeTeachingResources('lessons', [{ _id: 'badminton-lesson', learningPathId: { _id: 'badminton-path' } }, { _id: 'yoga-lesson', learningPathId: 'yoga-path' }], classes, paths), item => item._id), ['badminton-lesson']);
+  assert.equal(scope.scopeTeachingResources('subjects', [{ _id: 'badminton' }, { _id: 'yoga' }], classes, paths).length, 1);
+  assert.equal(scope.scopeTeachingResources('courses', [{ _id: 'badminton-course' }, { _id: 'yoga-course' }], classes, paths).length, 1);
+  assert.equal(scope.scopeTeachingResources('learning-paths', paths, classes, paths).length, 1);
+});
+test('attendance schedule choices match selected class and day and exclude cancellations', () => {
+  const { classSessions, attendanceMembers } = loadService('../utils/coach-teaching');
+  const schedules = [{ _id: 'valid', classId: { _id: 'c' }, date: '2026-10-17T00:00:00Z', status: 'SCHEDULED', startTime: '08:00' }, { _id: 'wrong-class', classId: 'other', date: '2026-10-17', status: 'SCHEDULED' }, { _id: 'wrong-day', classId: 'c', date: '2026-10-18', status: 'SCHEDULED' }, { _id: 'cancelled', classId: 'c', date: '2026-10-17', status: 'CANCELLED' }];
+  assert.deepEqual(Array.from(classSessions(schedules, 'c', '2026-10-17'), item => item._id), ['valid']);
+  assert.equal(attendanceMembers([{ class: { _id: 'c' }, member: { _id: 'm' } }, { class: 'other', member: { _id: 'other-m' } }], 'c').length, 1);
 });
