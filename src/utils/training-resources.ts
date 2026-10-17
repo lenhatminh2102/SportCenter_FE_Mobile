@@ -10,7 +10,7 @@ export const trainingResources: Record<'classes' | 'class-registrations' | 'atte
     { key: 'status', label: 'Trạng thái đăng ký', required: true, updateOnly: true, options: options([['PENDING_PAYMENT', 'Chờ thanh toán'], ['CONFIRMED', 'Đã xác nhận'], ['CANCELLED', 'Đã hủy']]) },
   ] },
   attendances: { title: 'Điểm danh', singular: 'điểm danh', titleKey: 'date', fields: [
-    relation('memberId', 'Hội viên', 'members'), relation('classId', 'Lớp học', 'classes'), relation('lessonId', 'Bài học', 'lessons'),
+    relation('classId', 'Lớp học', 'classes'), relation('memberId', 'Hội viên', 'members'), relation('lessonId', 'Bài học', 'lessons'),
     { key: 'date', label: 'Ngày (YYYY-MM-DD)', type: 'date', required: true },
     { key: 'status', label: 'Điểm danh', required: true, options: options([['PRESENT', 'Có mặt'], ['ABSENT', 'Vắng mặt']]) },
   ] },
