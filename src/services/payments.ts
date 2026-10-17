@@ -15,8 +15,15 @@ export function registrationFor(payment: Entity, registrations: Entity[]): Entit
   return registrations.find(item => entityId(item) === id) || (payment.classRegistrationId && typeof payment.classRegistrationId === 'object' ? payment.classRegistrationId as Entity : undefined);
 }
 export const ownPayments = (items: Entity[], registrations: Entity[], memberId: string) => items.filter(item => !!memberId && referenceId(registrationFor(item, registrations)?.memberId) === memberId);
+export function pendingPaymentForRegistration(items: Entity[], registrationId?: string) {
+  return registrationId ? items.find(item => item.status === 'PENDING' && referenceId(item.classRegistrationId) === registrationId) : undefined;
+}
+export function payableRegistrations(registrations: Entity[], payments: Entity[]) {
+  return registrations.filter(item => item.status === 'PENDING_PAYMENT' && !payments.some(payment => referenceId(payment.classRegistrationId) === entityId(item) && ['PENDING', 'SUCCESS'].includes(String(payment.status))));
+}
 export const currency = (value: unknown) => typeof value === 'number' && Number.isFinite(value) ? `${value.toLocaleString('vi-VN')} ₫` : 'Chưa có học phí';
 export function validatePaymentUrl(value: string): string {
+  if (typeof value !== 'string' || !value) throw new Error('Máy chủ chưa trả về địa chỉ VNPay.');
   const url = new URL(value);
   if (url.protocol !== 'https:' || !['sandbox.vnpayment.vn', 'pay.vnpay.vn'].includes(url.hostname) || url.username || url.password) throw new Error('Địa chỉ VNPay từ máy chủ không hợp lệ.');
   return url.toString();
