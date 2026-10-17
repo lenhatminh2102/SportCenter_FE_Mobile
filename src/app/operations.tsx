@@ -7,6 +7,7 @@ import { ui } from '@/components/sport/styles';
 import { resources } from '@/utils/resources';
 import type { ResourceKey } from '@/services/operations';
 const descriptions: Record<ResourceKey, string> = {
+  rooms: 'Phòng tập, sức chứa và trạng thái sử dụng.',
   coaches: 'Danh sách và thông tin huấn luyện viên.', schedules: 'Lịch lớp học, bài học và lịch tập của bạn.',
   'activity-logs': 'Các thao tác đã được ghi nhận trên hệ thống.', subjects: 'Các môn thể thao tại trung tâm.',
   classes: 'Lớp học thực tế và đăng ký tham gia.', 'class-registrations': 'Theo dõi và hủy đăng ký lớp.', attendances: 'Ghi nhận có mặt, vắng mặt theo buổi học.',

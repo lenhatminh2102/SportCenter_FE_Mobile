@@ -5,6 +5,11 @@ export type FormField = { key: string; label: string; required?: boolean; type?:
 export type ResourceDefinition = { title: string; singular: string; titleKey: string; fields: FormField[] };
 export const resources: Record<ResourceKey, ResourceDefinition> = {
   ...trainingResources,
+  rooms: { title: 'Phòng tập', singular: 'phòng tập', titleKey: 'name', fields: [
+    { key: 'roomNumber', label: 'Mã phòng', required: true }, { key: 'name', label: 'Tên phòng', required: true },
+    { key: 'capacity', label: 'Sức chứa', type: 'number', required: true },
+    { key: 'status', label: 'Trạng thái', required: true, options: [{ value: 'ACTIVE', label: 'Hoạt động' }, { value: 'INACTIVE', label: 'Tạm dừng' }] },
+  ] },
   coaches: { title: 'Huấn luyện viên', singular: 'huấn luyện viên', titleKey: 'fullName', fields: [
     { key: 'userId', label: 'User ID tài khoản COACH đã đăng ký', type: 'id', required: true, createOnly: true },
     { key: 'fullName', label: 'Họ và tên', required: true }, { key: 'phone', label: 'Số điện thoại', type: 'phone', required: true },

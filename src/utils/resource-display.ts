@@ -10,6 +10,7 @@ const statuses: Record<string, string> = { SCHEDULED: 'Đã lên lịch', COMPLE
 export function detailFor(resource: ResourceKey, item: Entity): string {
   const status = statuses[String(item.status)] || String(item.status || '');
   switch (resource) {
+    case 'rooms': return `Phòng ${String(item.roomNumber || '')} · ${String(item.capacity || '')} người\n${status}`;
     case 'coaches': return String(item.phone || '');
     case 'subjects': return 'Môn thể thao trên hệ thống';
     case 'courses': return `${status}\n${String(item.description || '')}`;

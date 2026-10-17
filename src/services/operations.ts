@@ -1,7 +1,8 @@
 import { request } from './api';
+import { roomsApi } from './rooms';
 export type Entity = { id?: string; _id?: string; [key: string]: unknown };
 export type ResourceInput = Record<string, string | number>;
-export type ResourceKey = 'coaches' | 'schedules' | 'activity-logs' | 'subjects' | 'courses' | 'lessons' | 'classes' | 'class-registrations' | 'attendances' | 'learning-paths' | 'lesson-progress' | 'workout-plans' | 'workout-results';
+export type ResourceKey = 'rooms' | 'coaches' | 'schedules' | 'activity-logs' | 'subjects' | 'courses' | 'lessons' | 'classes' | 'class-registrations' | 'attendances' | 'learning-paths' | 'lesson-progress' | 'workout-plans' | 'workout-results';
 export const entityId = (entity: Entity) => entity.id || entity._id || '';
 export function referenceId(value: unknown): string {
   return typeof value === 'string' ? value : value && typeof value === 'object' ? entityId(value as Entity) : '';
@@ -44,4 +45,4 @@ export const lessonProgressApi = { list: progressCrud.list, create: progressCrud
 export const workoutPlansApi = crud('/api/workout-plans', ['coachId', 'memberId', 'classId', 'goal', 'level', 'plan', 'source', 'status']);
 const resultCrud = crud('/api/workout-results', ['workoutPlanId', 'memberId', 'result', 'comment']);
 export const workoutResultsApi = { list: resultCrud.list, create: resultCrud.create, update: resultCrud.update };
-export const resourceApis = { coaches: coachesApi, schedules: schedulesApi, 'activity-logs': activityLogsApi, subjects: subjectsApi, courses: coursesApi, lessons: lessonsApi, classes: classesApi, 'class-registrations': classRegistrationsApi, attendances: attendancesApi, 'learning-paths': learningPathsApi, 'lesson-progress': lessonProgressApi, 'workout-plans': workoutPlansApi, 'workout-results': workoutResultsApi };
+export const resourceApis = { rooms: roomsApi, coaches: coachesApi, schedules: schedulesApi, 'activity-logs': activityLogsApi, subjects: subjectsApi, courses: coursesApi, lessons: lessonsApi, classes: classesApi, 'class-registrations': classRegistrationsApi, attendances: attendancesApi, 'learning-paths': learningPathsApi, 'lesson-progress': lessonProgressApi, 'workout-plans': workoutPlansApi, 'workout-results': workoutResultsApi };
