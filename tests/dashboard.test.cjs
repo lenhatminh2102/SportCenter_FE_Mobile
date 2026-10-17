@@ -10,7 +10,7 @@ function load(file, dependencies = {}) {
 }
 const ref = value => typeof value === 'string' ? value : value?.id || value?._id || '';
 function dashboard(dependencies = {}) {
-  return load('src/services/dashboard.ts', { './operations': { entityId: ref, referenceId: ref, ...dependencies }, './members': { membersApi: { list: async () => [] } } });
+  return load('src/services/dashboard.ts', { '@/utils/coach-roster': load('src/utils/coach-roster.ts', { '@/services/operations': { entityId: ref, referenceId: ref } }), './operations': { entityId: ref, referenceId: ref, ...dependencies }, './members': { membersApi: { list: async () => [] } } });
 }
 const now = new Date('2026-10-14T00:00:00Z');
 test('staff roles have separate landing pages and menu entries', () => {
@@ -35,7 +35,7 @@ test('coach dashboard scopes classes, students, schedules and results', () => {
     results: [{ _id: 'r1', workoutPlanId: 'p1' }, { _id: 'r2', workoutPlanId: 'p2' }],
   }, now);
   assert.equal(data.name, 'Coach A');
-  assert.deepEqual(Array.from(data.metrics, metric => metric.value), [1, 1, 1, 1]);
+  assert.deepEqual(Array.from(data.metrics, metric => metric.value), [1, 1, 2, 1]);
   assert.equal(data.sessions.length, 1); assert.equal(data.activity.length, 1);
   assert.equal(data.week[0].count, 1);
 });

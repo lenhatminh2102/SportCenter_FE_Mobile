@@ -182,3 +182,11 @@ Role flows:
 Backend boundaries: a dedicated cash/transfer settlement API, refunds, per-session reservations and reactivation of cancelled enrollments are not implemented by the supplied BE. The frontend does not invent these actions. VNPay still requires backend gateway credentials. Server ownership checks and atomic duplicate/conflict/settlement protection remain necessary independently of UI checks.
 
 Validation: regression coverage for schedule acknowledgment, duplicate enrollment resume, invalid state transitions, conflicting schedules and role navigation/scoping. Real account/device and gateway transactions still need manual validation.
+
+## Coach sees newly registered students
+
+Coach dashboard and /coach-students now display real member fullName for both PENDING_PAYMENT and CONFIRMED registrations in assigned classes. Cancelled records and other coaches' classes are excluded. The metric counts distinct members; each roster card shows a member/class registration, class, phone if available and status. Class cards link to their roster. Search and status filters are available; returning to the screen, pull-to-refresh or the refresh button reloads data. This is not a real-time subscription.
+
+The supplied /coaches/my-students remains confirmed-only for attendance/progress assignment permissions. The display roster uses existing coach profile, classes and populated registration APIs. Pending records are not promoted to confirmed students. Missing names have an unavailable label rather than raw IDs. Backend record authorization remains separate from UI filtering.
+
+Validation: 129 tests pass, including own-class scoping, pending/confirmed names, cancelled exclusion and distinct counting; lint, TypeScript and web export pass. Live account and native-device verification remain manual.

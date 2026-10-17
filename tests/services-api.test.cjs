@@ -165,3 +165,23 @@ test('enrollment detects overlapping confirmed classes but allows adjacent sessi
   sessions[1].startTime = '08:30'; registrations[0].status = 'PENDING_PAYMENT';
   assert.equal(flow.enrollmentConflicts(sessions, registrations, 'new', 'm').length, 0);
 });
+
+test('coach roster shows pending and confirmed names only for assigned classes', () => {
+  const { buildCoachRoster, coachStudentName } = loadService('../utils/coach-roster');
+  const classes = [{ _id: 'own', name: 'Yoga', coachId: 'coach' }, { _id: 'foreign', name: 'Boxing', coachId: 'other' }];
+  const rows = buildCoachRoster([
+    { _id: 'new', classId: 'own', memberId: { _id: 'm1', fullName: 'Nguyễn An', phone: '0901234567' }, status: 'PENDING_PAYMENT', registeredAt: '2026-10-17' },
+    { _id: 'paid', classId: { _id: 'own' }, memberId: { _id: 'm2', fullName: 'Trần Bình' }, status: 'CONFIRMED', registeredAt: '2026-10-16' },
+    { _id: 'hidden', classId: 'foreign', memberId: { _id: 'm3', fullName: 'Foreign' }, status: 'PENDING_PAYMENT' },
+    { _id: 'cancelled', classId: 'own', memberId: { _id: 'm4', fullName: 'Cancelled' }, status: 'CANCELLED' },
+  ], classes, 'coach');
+  assert.equal(rows.length, 2); assert.equal(coachStudentName(rows[0]), 'Nguyễn An');
+  assert.equal(rows[0].status, 'PENDING_PAYMENT'); assert.equal(coachStudentName(rows[1]), 'Trần Bình');
+  assert.equal(buildCoachRoster([], classes, '').length, 0);
+});
+test('coach roster counts repeat students by member and avoids exposing raw IDs as names', () => {
+  const { buildCoachRoster, coachStudentName } = loadService('../utils/coach-roster');
+  const rows = buildCoachRoster([{ _id: 'a', classId: 'a', memberId: 'm', status: 'PENDING_PAYMENT' }, { _id: 'b', classId: 'b', memberId: { _id: 'm', fullName: 'Member' }, status: 'CONFIRMED' }], [{ _id: 'a', coachId: 'c' }, { _id: 'b', coachId: 'c' }], 'c');
+  assert.equal(rows.length, 2); assert.equal(new Set(rows.map(item => item.memberId)).size, 1);
+  assert.equal(coachStudentName(rows[0]), 'Chưa tải được tên hội viên');
+});
