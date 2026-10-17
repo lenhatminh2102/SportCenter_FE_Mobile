@@ -11,10 +11,16 @@ import { QueryStatus } from './access';
 import { loadTeachingScope } from '@/services/coach-teaching';
 import { scopeTeachingResources } from '@/utils/coach-teaching';
 import { assertCoachAssignment } from '@/utils/role-workflows';
-export function ResourceForm({ resource, initial, token, userId, role, actorId, defaults, onSave, onSaved }: {
+import { CoachAttendanceForm } from './coach-attendance-form';
+type ResourceFormProps = {
   resource: ResourceKey; initial?: Entity; token: string; userId: string; role?: string; actorId?: string; defaults?: Record<string, string>;
   onSave: (input: ResourceInput) => Promise<unknown>; onSaved: () => void;
-}) {
+};
+export function ResourceForm(props: ResourceFormProps) {
+  if (props.resource === 'attendances' && props.role === 'COACH') return <CoachAttendanceForm token={props.token} initial={props.initial} defaults={props.defaults} onSaved={props.onSaved} />;
+  return <GenericResourceForm {...props} />;
+}
+function GenericResourceForm({ resource, initial, token, userId, role, actorId, defaults, onSave, onSaved }: ResourceFormProps) {
   const [values, setValues] = useState<Record<string, string>>(() => ({ ...initialValues(resource, initial), ...defaults, ...(role === 'MEMBER' && actorId ? { memberId: actorId } : {}), ...(role === 'COACH' && resource === 'workout-plans' && actorId ? { coachId: actorId } : {}), ...(resource === 'activity-logs' ? { userId } : {}) }));
   const [submitted, setSubmitted] = useState(false);
   const [busy, setBusy] = useState(false);

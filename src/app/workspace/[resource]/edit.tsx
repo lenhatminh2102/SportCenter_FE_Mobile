@@ -10,7 +10,6 @@ import { useActorProfile } from '@/hooks/use-actor-profile';
 import { useApiQuery } from '@/hooks/use-api-query';
 import { AccessScreen, QueryStatus } from '@/components/sport/access';
 import { Brand, Screen } from '@/components/sport/ui';
-import { CoachAttendanceForm } from '@/components/sport/coach-attendance-form';
 import { ResourceForm } from '@/components/sport/resource-form';
 import { ui } from '@/components/sport/styles';
 function ResourceEditor({ resource, id, classId, lessonId, date, scheduleId }: { resource: ResourceKey; id?: string; classId?: string; lessonId?: string; date?: string; scheduleId?: string }) {
@@ -39,7 +38,7 @@ function ResourceEditor({ resource, id, classId, lessonId, date, scheduleId }: {
     {resource === 'coaches' && !id && <Text style={ui.body}>Chọn User ID của tài khoản đã đăng ký với vai trò COACH. Hồ sơ huấn luyện viên và tài khoản đăng nhập là hai bản ghi riêng.</Text>}
     {id && <QueryStatus loading={query.loading} error={query.error} retry={query.reload} />}
     {id && !query.loading && !query.error && !selected && <Text style={ui.error}>Không tìm thấy bản ghi. Có thể dữ liệu đã được xóa.</Text>}
-    {(!id || selected) && (resource === 'attendances' && user.role === 'COACH' ? <CoachAttendanceForm token={token} initial={selected} defaults={{ ...(classId ? { classId } : {}), ...(date ? { date } : {}), ...(scheduleId ? { scheduleId } : {}) }} onSaved={() => router.dismissTo({ pathname: '/workspace/[resource]', params: { resource } })} /> : <ResourceForm key={id || 'new'} resource={resource} role={user.role} actorId={actorId} token={token} userId={user.id} defaults={!id && resource === 'attendances' ? { ...(classId ? { classId } : {}), ...(lessonId ? { lessonId } : {}), ...(date ? { date } : {}) } : undefined} initial={selected} onSave={input => id && 'update' in api ? api.update(token, id, input) : api.create(token, input)} onSaved={() => router.dismissTo({ pathname: '/workspace/[resource]', params: { resource } })} />)}
+    {(!id || selected) && <ResourceForm key={id || 'new'} resource={resource} role={user.role} actorId={actorId} token={token} userId={user.id} defaults={!id && resource === 'attendances' ? { ...(classId ? { classId } : {}), ...(lessonId ? { lessonId } : {}), ...(date ? { date } : {}), ...(scheduleId ? { scheduleId } : {}) } : undefined} initial={selected} onSave={input => id && 'update' in api ? api.update(token, id, input) : api.create(token, input)} onSaved={() => router.dismissTo({ pathname: '/workspace/[resource]', params: { resource } })} />}
   </Screen>;
 }
 export default function EditResourceRoute() {

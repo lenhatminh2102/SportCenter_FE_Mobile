@@ -58,3 +58,17 @@ test('logged-out coach and manager dashboards never read a null user or request 
     assert.equal(requests, 0);
   }
 });
+
+
+test('every coach attendance form entry uses schedule attendance and preserves selected session', () => {
+  const jsx = (type, props) => ({ type, props });
+  const CoachAttendanceForm = () => {};
+  const context = { exports: {}, require: name => name === 'react/jsx-runtime' ? { jsx, jsxs: jsx } : name === './coach-attendance-form' ? { CoachAttendanceForm } : {} };
+  vm.runInNewContext(ts.transpileModule(fs.readFileSync('src/components/sport/resource-form.tsx', 'utf8'), { compilerOptions: { jsx: ts.JsxEmit.ReactJSX, module: ts.ModuleKind.CommonJS } }).outputText, context);
+  const props = { resource: 'attendances', role: 'COACH', token: 'token', initial: { _id: 'attendance' }, defaults: { classId: 'class', date: '2026-10-24', scheduleId: 'session' }, onSaved() {} };
+  const result = context.exports.ResourceForm(props);
+  assert.equal(result.type, CoachAttendanceForm);
+  for (const key of ['token', 'initial', 'defaults', 'onSaved']) assert.equal(result.props[key], props[key]);
+  assert.notEqual(context.exports.ResourceForm({ ...props, role: 'CENTER_MANAGER' }).type, CoachAttendanceForm);
+  assert.notEqual(context.exports.ResourceForm({ ...props, resource: 'lesson-progress' }).type, CoachAttendanceForm);
+});
