@@ -1,7 +1,7 @@
 import type { Href } from 'expo-router';
 export type StaffRole = 'COACH' | 'CENTER_MANAGER';
 export const isStaffRole = (role?: string): role is StaffRole => role === 'COACH' || role === 'CENTER_MANAGER';
-export const roleHome = (role?: string): '/coach' | '/manager' | '/account' => role === 'COACH' ? '/coach' : role === 'CENTER_MANAGER' ? '/manager' : '/account';
+export const roleHome = (role?: string): '/coach' | '/manager' | '/member' | '/account' => role === 'COACH' ? '/coach' : role === 'CENTER_MANAGER' ? '/manager' : role === 'MEMBER' ? '/member' : '/account';
 export type StaffMenuItem = { label: string; href: Href; path: string; group: string; symbol: string };
 const resource = (key: string, label: string, group: string, symbol: string): StaffMenuItem => ({ label, href: { pathname: '/workspace/[resource]', params: { resource: key } }, path: `/workspace/${key}`, group, symbol });
 export function staffMenu(role: StaffRole): StaffMenuItem[] {
