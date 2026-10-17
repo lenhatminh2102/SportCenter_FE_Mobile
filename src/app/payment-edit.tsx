@@ -1,6 +1,6 @@
 import { useCallback, useRef, useState } from 'react';
 import { Text, View } from 'react-native';
-import { Link, router, useLocalSearchParams } from 'expo-router';
+import { Link, router, useLocalSearchParams, useFocusEffect } from 'expo-router';
 import { useAuth } from '@/context/auth';
 import { useApiQuery } from '@/hooks/use-api-query';
 import { useActorProfile } from '@/hooks/use-actor-profile';
@@ -8,6 +8,7 @@ import { classRegistrationsApi, entityId, referenceId, referenceLabel, type Enti
 import { canManagePayments, currency, ownPayments, paymentMethods, paymentsApi, registrationFor, type PaymentMethod } from '@/services/payments';
 import { AccessScreen, QueryStatus } from '@/components/sport/access';
 import { Screen, Button } from '@/components/sport/ui';
+import { PaymentActions } from '@/components/sport/payment-actions';
 import { ui } from '@/components/sport/styles';
 function PaymentForm({ token, item, registrations, selectedId }: { token: string; item?: Entity; registrations: Entity[]; selectedId?: string }) {
   const [registrationId, setRegistrationId] = useState(item ? referenceId(item.classRegistrationId) : selectedId || '');
@@ -27,10 +28,11 @@ export default function PaymentEditor() {
   const actor = useActorProfile(member); const actorId = actor.data ? entityId(actor.data) : '';
   const load = useCallback(async () => { const [payments, registrations] = await Promise.all([paymentsApi.list(token!), classRegistrationsApi.list(token!)]); const visible = member ? registrations.filter(record => referenceId(record.memberId) === actorId) : registrations; return { payments: member ? ownPayments(payments, registrations, actorId) : payments, registrations: visible }; }, [token, member, actorId]);
   const query = useApiQuery(load, !!token && canManagePayments(user?.role) && (!member || !!actorId));
+  useFocusEffect(useCallback(() => { query.reload(); }, [query.reload]));
   if (!user || !token) return <AccessScreen />;
   if (!canManagePayments(user.role)) return <AccessScreen denied />;
   const item = query.data?.payments.find(record => entityId(record) === id);
   const registration = item ? registrationFor(item, query.data?.registrations || []) : undefined;
   const eligible = (query.data?.registrations || []).filter(record => record.status === 'PENDING_PAYMENT' && !query.data?.payments.some(payment => referenceId(payment.classRegistrationId) === entityId(record) && ['PENDING', 'SUCCESS'].includes(String(payment.status))));
-  return <Screen><Link href="/payments" style={ui.link}>← Thanh toán</Link><Text style={ui.title}>{id ? 'Chi tiết thanh toán' : 'Yêu cầu thanh toán'}</Text><QueryStatus loading={query.loading || member && actor.loading} error={query.error || (member ? actor.error : null)} retry={() => { query.reload(); actor.reload(); }} />{member && actor.error && <Link href="/profile" style={ui.link}>Hoàn thiện hồ sơ hội viên →</Link>}{query.data && (id && !item ? <Text style={ui.error}>Không tìm thấy thanh toán thuộc tài khoản này.</Text> : item && (item.status !== 'PENDING' || registration?.status === 'CANCELLED') ? <Text style={ui.body}>Yêu cầu này không còn cho phép chỉnh sửa. Quay lại danh sách để xem trạng thái mới nhất.</Text> : <PaymentForm key={id || 'new'} token={token} item={item} registrations={eligible} selectedId={registrationId} />)}</Screen>;
+  return <Screen><Link href="/payments" style={ui.link}>← Thanh toán</Link><Text style={ui.title}>{id ? 'Chi tiết thanh toán' : 'Yêu cầu thanh toán'}</Text><QueryStatus loading={query.loading || member && actor.loading} error={query.error || (member ? actor.error : null)} retry={() => { query.reload(); actor.reload(); }} />{member && actor.error && <Link href="/profile" style={ui.link}>Hoàn thiện hồ sơ hội viên →</Link>}{query.data && (id && !item ? <Text style={ui.error}>Không tìm thấy thanh toán thuộc tài khoản này.</Text> : item && (item.status !== 'PENDING' || registration?.status === 'CANCELLED') ? <Text style={ui.body}>Yêu cầu này không còn cho phép chỉnh sửa. Quay lại danh sách để xem trạng thái mới nhất.</Text> : <PaymentForm key={id || 'new'} token={token} item={item} registrations={eligible} selectedId={registrationId} />)}{member && item?.status === 'PENDING' && registration?.status === 'PENDING_PAYMENT' && <PaymentActions key={entityId(item)} token={token} item={item} onRefresh={query.reload} />}</Screen>;
 }
