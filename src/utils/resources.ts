@@ -1,7 +1,7 @@
 import { trainingResources } from './training-resources';
 import { validPhone } from './validation';
 import { referenceId, type Entity, type ResourceInput, type ResourceKey } from '@/services/operations';
-export type FormField = { key: string; label: string; required?: boolean; type?: 'id' | 'phone' | 'number' | 'date' | 'time' | 'multiline'; options?: { value: string; label: string }[]; createOnly?: boolean; updateOnly?: boolean; relation?: string };
+export type FormField = { key: string; label: string; required?: boolean; type?: 'id' | 'phone' | 'number' | 'date' | 'time' | 'multiline' | 'money'; options?: { value: string; label: string }[]; createOnly?: boolean; updateOnly?: boolean; relation?: string };
 export type ResourceDefinition = { title: string; singular: string; titleKey: string; fields: FormField[] };
 export const resources: Record<ResourceKey, ResourceDefinition> = {
   ...trainingResources,
@@ -16,7 +16,7 @@ export const resources: Record<ResourceKey, ResourceDefinition> = {
   ] },
   subjects: { title: 'Môn thể thao', singular: 'môn thể thao', titleKey: 'name', fields: [{ key: 'name', label: 'Tên môn thể thao', required: true }] },
   courses: { title: 'Khóa học', singular: 'khóa học', titleKey: 'name', fields: [
-    { key: 'name', label: 'Tên khóa học', required: true }, { key: 'description', label: 'Mô tả', type: 'multiline' },
+    { key: 'name', label: 'Tên khóa học', required: true }, { key: 'price', label: 'Học phí (VND)', type: 'money', required: true }, { key: 'description', label: 'Mô tả', type: 'multiline' },
     { key: 'status', label: 'Trạng thái', required: true, options: [{ value: 'ACTIVE', label: 'Hoạt động' }, { value: 'INACTIVE', label: 'Tạm dừng' }] },
   ] },
   lessons: { title: 'Bài học', singular: 'bài học', titleKey: 'title', fields: [
@@ -56,7 +56,11 @@ export function validateResource(resource: ResourceKey, values: Record<string, s
     if (field.required && !value) errors[field.key] = 'Vui lòng nhập thông tin này.';
     else if (value && field.type === 'id' && !/^[a-f\d]{24}$/i.test(value)) errors[field.key] = 'Chọn bản ghi hoặc nhập ID hợp lệ gồm 24 ký tự.';
     else if (value && field.type === 'phone' && !validPhone(value)) errors[field.key] = 'Số điện thoại Việt Nam chưa hợp lệ.';
-    else if (field.type === 'number') {
+    else if (field.type === 'money') {
+      const number = Number(value);
+      if (!value || !Number.isFinite(number) || number < 0) errors[field.key] = 'Nhập học phí từ 0 trở lên.';
+      else payload[field.key] = number;
+    } else if (field.type === 'number') {
       const number = Number(value);
       if (!Number.isSafeInteger(number) || number < 1) errors[field.key] = 'Nhập số nguyên từ 1 trở lên.';
       else payload[field.key] = number;

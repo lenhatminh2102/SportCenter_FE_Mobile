@@ -13,7 +13,7 @@ export function detailFor(resource: ResourceKey, item: Entity): string {
     case 'rooms': return `Phòng ${String(item.roomNumber || '')} · ${String(item.capacity || '')} người\n${status}`;
     case 'coaches': return String(item.phone || '');
     case 'subjects': return 'Môn thể thao trên hệ thống';
-    case 'courses': return `${status}\n${String(item.description || '')}`;
+    case 'courses': return `${typeof item.price === 'number' ? item.price.toLocaleString('vi-VN') + ' ₫ · ' : ''}${status}\n${String(item.description || '')}`;
     case 'lessons': return `Bài ${String(item.order)} · ${referenceLabel(item.learningPathId)}\n${String(item.description || '')}`;
     case 'schedules': return `${referenceLabel(item.classId)} · ${referenceLabel(item.lessonId)}\nPhòng: ${referenceLabel(item.roomId)} · ${status}`;
     case 'activity-logs': return `${referenceLabel(item.userId)}\n${item.createdAt ? new Date(String(item.createdAt)).toLocaleString('vi-VN', { timeZone: 'Asia/Bangkok' }) : ''}`;

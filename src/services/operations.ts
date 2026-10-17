@@ -25,7 +25,7 @@ function crud(path: string, keys: string[], updateKeys = keys) {
 }
 export const coachesApi = crud('/api/coaches', ['userId', 'fullName', 'phone'], ['fullName', 'phone']);
 export const subjectsApi = crud('/api/subjects', ['name']);
-export const coursesApi = crud('/api/courses', ['name', 'description', 'status']);
+export const coursesApi = crud('/api/courses', ['name', 'description', 'price', 'status']);
 export const lessonsApi = crud('/api/lessons', ['learningPathId', 'title', 'description', 'order']);
 export const schedulesApi = {
   ...crud('/api/schedules', ['classId', 'lessonId', 'roomId', 'date', 'startTime', 'endTime', 'status']),
