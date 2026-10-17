@@ -117,3 +117,33 @@ Dashboard requests run in parallel and refresh when the page regains focus or on
 
 The public home, login/register and staff surfaces now follow the supplied src.zip design. Google sign-in supports the newer backend OTP challenge, verification and resend flow. See [setup and validation](docs/google-otp-setup.md). Real OAuth and email delivery require the developer client IDs and backend SMTP configuration.
 
+
+## Remaining API integration and page redesign (2026-10-17)
+
+The app now connects the remaining client-facing groups in the supplied backend: Rooms, Notifications, Support requests, Payments, coach profile/students and coach teaching schedules. This adds 19 client API operations. VNPay return/IPN stay backend callbacks.
+
+| Area | Screen | Behavior |
+| --- | --- | --- |
+| Rooms | /workspace/rooms | Manager CRUD; authenticated room viewing; room detail when editing |
+| Scheduling | /workspace/schedules | Required room picker, server conflict errors, personal coach schedule endpoint |
+| Tuition | /pricing, /workspace/courses | Real course prices; manager can enter nonnegative tuition |
+| Notifications | /notifications, /notification-compose | Own inbox, unread filter, read/unread toggle; staff compose to existing users |
+| Support | /support | Members create/view their requests; manager/receptionist resolve or reopen |
+| Payments | /payments, /payment-edit | Own member payment history, create pending requests, update method, VNPay checkout |
+| Coach | /coach-students | Confirmed students from assigned classes; /coaches/me used for current profile |
+
+Operations are grouped into classes/scheduling, training, center information and services. Account and staff sidebar link to the new pages. Class detail and pricing use backend data rather than local demo booking or membership prices. Course/class links apply corresponding list filters.
+
+### Payment configuration and boundaries
+
+The supplied BE hardcodes VNPay sandbox/test mode. Set its VNPAY_TMN_CODE, VNPAY_HASH_SECRET and VNPAY_RETURN_URL for gateway testing. Only backend payment confirmation determines success; opening or closing checkout does not mark a payment paid. Do not point return/IPN to client routes. Device access requires a reachable backend and a callback URL appropriate to the gateway environment.
+
+For optional demo simulation only: set frontend EXPO_PUBLIC_ENABLE_PAYMENT_DEMO=true and backend PAYMENT_MODE=mock, then restart. The default UI hides simulation. Each simulation asks for confirmation and is labeled as testing; success can confirm the class registration. Cash/transfer records remain pending until a supported backend process confirms them; no manual success endpoint is invented.
+
+Payment amounts always come from Course.price. The app does not send amount, status or paymentDate in create/update payloads. Creating a request does not charge a card. Google Client ID configuration remains deferred as requested.
+
+### Verification and limits
+
+109 mocked contract/permission/validation tests pass, covering the new endpoints, ownership joins, forbidden checkout URL schemes/hosts, missing room, tuition validation and backend failures. Expo lint, TypeScript and web export are checked. Successful staff/member writes, real gateway callbacks and native-device layouts still need manual validation with real test accounts; no payments or notifications were submitted to real users during checks.
+
+The supplied notifications/support/payment list APIs return broad datasets. Frontend filtering controls presentation, not authorization; the backend should enforce record ownership for list and mutation requests before production use. Sessions remain in memory. Web origins/API URLs and OAuth/SMTP secrets are not changed by this work.
