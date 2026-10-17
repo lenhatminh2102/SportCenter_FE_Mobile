@@ -164,3 +164,21 @@ Payment corrections:
 Local backend inspection found VNPAY_TMN_CODE, VNPAY_HASH_SECRET and VNPAY_RETURN_URL missing. Those must be configured on the backend to use sandbox checkout; no gateway transaction has been verified. The backend list/create/update ownership limitations documented above remain outside this frontend change.
 
 Validation: 116 tests including member scoping, onboarding, navigation, existing payment reuse and checkout gesture sequencing; Expo lint, TypeScript and web export. Native-device and real account/gateway flows still require manual testing.
+
+## End-to-end class enrollment and role workflows
+
+Member flow: /member → classes or /enroll → choose a class → review and acknowledge that class timetable → save/review member profile → review registration → save registration → /payment-edit → server-confirmed result → /registration-detail → personal timetable.
+
+The supplied BE registers an entire class with classId/memberId; it has no per-session booking field. The timetable step explicitly confirms all upcoming sessions rather than claiming to save a selected single session. Classes without an active priced course or future sessions cannot start this checkout flow. Current timetable signatures are checked again before POST; changed schedules require acknowledgment again. Overlaps with already-confirmed classes are blocked for the selected member. These client checks supplement, rather than replace, backend validation.
+
+Existing pending registrations resume payment. Confirmed records open schedules; cancelled records explain that the supplied BE rejects re-registration and direct members to support. Legacy registration editor URLs redirect into the wizard or read-only registration detail. Staff cannot manually mark a registration CONFIRMED through the generic form. Pending cancellation rechecks registration/payment state; paid enrollments direct to support instead of automatic cancellation/refund. A successful payment with a still-pending registration shows a synchronization notice and does not offer another charge.
+
+Role flows:
+- MEMBER: own enrollment, profile, billing, timetable, training and support.
+- RECEPTIONIST: /reception with its own sidebar; look up member profiles, enroll on behalf of a selected member, track billing, attendance and support. No content/room/course write actions.
+- COACH: teaching schedules → assigned classes/students → attendance/progress → plans/results. Attendance and progress lists are scoped; member pickers use /coaches/my-students, class pickers use assigned classes. New/changed assignments are revalidated before saving. Existing own personal-training plans can still be edited.
+- CENTER_MANAGER: subjects/courses/tuition → coaches, rooms, learning paths and lessons → classes → timetable → enrollment/payment oversight and support. The dashboard and operations page explain prerequisite order.
+
+Backend boundaries: a dedicated cash/transfer settlement API, refunds, per-session reservations and reactivation of cancelled enrollments are not implemented by the supplied BE. The frontend does not invent these actions. VNPay still requires backend gateway credentials. Server ownership checks and atomic duplicate/conflict/settlement protection remain necessary independently of UI checks.
+
+Validation: regression coverage for schedule acknowledgment, duplicate enrollment resume, invalid state transitions, conflicting schedules and role navigation/scoping. Real account/device and gateway transactions still need manual validation.
