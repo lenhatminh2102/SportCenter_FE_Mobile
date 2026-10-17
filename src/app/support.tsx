@@ -16,7 +16,8 @@ export default function Support() {
   const [message, setMessage] = useState(''); const [filter, setFilter] = useState<'ALL' | 'PENDING' | 'RESOLVED'>('ALL'); const [error, setError] = useState(''); const [busy, setBusy] = useState(false); const pending = useRef(false);
   const load = useCallback(async () => { const items = await supportApi.list(token!); return member ? ownSupport(items, actorId) : items; }, [token, member, actorId]);
   const query = useApiQuery(load, !!token && (staff || member && !!actorId), false);
-  useFocusEffect(useCallback(() => { query.reload(); }, [query.reload]));
+  const { reload } = query;
+  useFocusEffect(useCallback(() => { reload(); }, [reload]));
   if (!user || !token) return <AccessScreen />;
   if (!member && !staff) return <AccessScreen denied />;
   async function save(item?: Entity) {

@@ -23,13 +23,18 @@ function crud(path: string, keys: string[], updateKeys = keys) {
     remove: (token: string, id: string) => request<void>(`${path}/${encodeURIComponent(id)}`, { token, method: 'DELETE' }),
   };
 }
-export const coachesApi = crud('/api/coaches', ['userId', 'fullName', 'phone'], ['fullName', 'phone']);
+export const coachesApi = {
+  ...crud('/api/coaches', ['userId', 'fullName', 'phone'], ['fullName', 'phone']),
+  me: (token: string) => request<Entity>('/api/coaches/me', { token }),
+  myStudents: (token: string) => request<Entity[]>('/api/coaches/my-students', { token }),
+};
 export const subjectsApi = crud('/api/subjects', ['name']);
 export const coursesApi = crud('/api/courses', ['name', 'description', 'price', 'status']);
 export const lessonsApi = crud('/api/lessons', ['learningPathId', 'title', 'description', 'order']);
 export const schedulesApi = {
   ...crud('/api/schedules', ['classId', 'lessonId', 'roomId', 'date', 'startTime', 'endTime', 'status']),
   my: (token: string) => request<Entity[]>('/api/schedules/my', { token }),
+  coachMy: (token: string) => request<Entity[]>('/api/schedules/coach/my', { token }),
 };
 export const activityLogsApi = {
   list: (token: string) => request<Entity[]>('/api/activity-logs', { token }),

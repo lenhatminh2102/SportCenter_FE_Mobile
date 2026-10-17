@@ -15,7 +15,8 @@ export default function Notifications() {
   const [busy, setBusy] = useState(''); const [error, setError] = useState(''); const pending = useRef(false);
   const load = useCallback(async () => ownNotifications(await notificationsApi.list(token!), user!.id), [token, user]);
   const query = useApiQuery(load, !!token, false);
-  useFocusEffect(useCallback(() => { query.reload(); }, [query.reload]));
+  const { reload } = query;
+  useFocusEffect(useCallback(() => { reload(); }, [reload]));
   if (!user || !token) return <AccessScreen />;
   async function toggle(item: Entity) {
     if (pending.current) return; pending.current = true; setBusy(entityId(item)); setError('');

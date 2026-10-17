@@ -43,8 +43,8 @@ export function summarizeDashboard(role: StaffRole, userId: string, data: Dashbo
 }
 export async function loadDashboard(role: StaffRole, userId: string, token: string): Promise<DashboardData> {
   const sources: [keyof DashboardSources, string, () => Promise<Entity[]>][] = [
-    ['coaches', 'Huấn luyện viên', () => coachesApi.list(token)], ['classes', 'Lớp học', () => classesApi.list(token)],
-    ['schedules', 'Lịch tập', () => schedulesApi.list(token)], ['registrations', 'Đăng ký lớp', () => classRegistrationsApi.list(token)],
+    ['coaches', 'Huấn luyện viên', async () => role === 'COACH' ? [await coachesApi.me(token)] : coachesApi.list(token)], ['classes', 'Lớp học', () => classesApi.list(token)],
+    ['schedules', 'Lịch tập', () => role === 'COACH' ? schedulesApi.coachMy(token) : schedulesApi.list(token)], ['registrations', 'Đăng ký lớp', () => classRegistrationsApi.list(token)],
     ...(role === 'CENTER_MANAGER' ? [
       ['members', 'Hội viên', async () => (await membersApi.list(token)).map(item => ({ ...item }))],
       ['logs', 'Lịch sử thao tác', () => activityLogsApi.list(token)],

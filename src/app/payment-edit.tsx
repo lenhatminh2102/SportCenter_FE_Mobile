@@ -28,7 +28,8 @@ export default function PaymentEditor() {
   const actor = useActorProfile(member); const actorId = actor.data ? entityId(actor.data) : '';
   const load = useCallback(async () => { const [payments, registrations] = await Promise.all([paymentsApi.list(token!), classRegistrationsApi.list(token!)]); const visible = member ? registrations.filter(record => referenceId(record.memberId) === actorId) : registrations; return { payments: member ? ownPayments(payments, registrations, actorId) : payments, registrations: visible }; }, [token, member, actorId]);
   const query = useApiQuery(load, !!token && canManagePayments(user?.role) && (!member || !!actorId));
-  useFocusEffect(useCallback(() => { query.reload(); }, [query.reload]));
+  const { reload } = query;
+  useFocusEffect(useCallback(() => { reload(); }, [reload]));
   if (!user || !token) return <AccessScreen />;
   if (!canManagePayments(user.role)) return <AccessScreen denied />;
   const item = query.data?.payments.find(record => entityId(record) === id);

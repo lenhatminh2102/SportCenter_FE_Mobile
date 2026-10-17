@@ -6,4 +6,4 @@ export const supportApi = {
   update: (token: string, id: string, status: 'PENDING' | 'RESOLVED') => request<Entity>(`/api/support-requests/${encodeURIComponent(id)}`, { token, method: 'PUT', body: { status } }),
 };
 export const canResolveSupport = (role?: string) => ['CENTER_MANAGER', 'RECEPTIONIST'].includes(role || '');
-export const ownSupport = (items: Entity[], memberId: string) => items.filter(item => referenceId(item.memberId) === memberId);
+export const ownSupport = (items: Entity[], memberId: string) => items.filter(item => !!memberId && referenceId(item.memberId) === memberId);

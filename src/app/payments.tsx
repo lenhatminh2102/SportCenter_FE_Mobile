@@ -15,7 +15,8 @@ export default function Payments() {
   const [filter, setFilter] = useState('ALL');
   const load = useCallback(async () => { const [items, registrations] = await Promise.all([paymentsApi.list(token!), classRegistrationsApi.list(token!)]); return { items: member ? ownPayments(items, registrations, actorId) : items, registrations }; }, [token, member, actorId]);
   const query = useApiQuery(load, !!token && canManagePayments(user?.role) && (!member || !!actorId), false);
-  useFocusEffect(useCallback(() => { query.reload(); }, [query.reload]));
+  const { reload } = query;
+  useFocusEffect(useCallback(() => { reload(); }, [reload]));
   if (!user || !token) return <AccessScreen />;
   if (!canManagePayments(user.role)) return <AccessScreen denied />;
   return <ListPage title={member ? 'Thanh toán của tôi' : 'Quản lý thanh toán'} description="Học phí được tính từ khóa học trên hệ thống. Trạng thái chỉ cập nhật khi backend xác nhận kết quả." items={(query.data?.items || []).filter(item => filter === 'ALL' || item.status === filter)} loading={query.loading || member && actor.loading} error={query.error} reload={query.reload} controls={<View style={{ gap: 12 }}><QueryStatus loading={member && actor.loading} error={member ? actor.error : null} retry={actor.reload} /><Button title="+ Tạo yêu cầu thanh toán" disabled={member && !actorId} onPress={() => router.push('/payment-edit')} /><View style={{ flexDirection: 'row', flexWrap: 'wrap', gap: 8 }}>{[['ALL', 'Tất cả'], ['PENDING', 'Chờ thanh toán'], ['SUCCESS', 'Thành công'], ['FAILED', 'Thất bại']].map(([key, label]) => <Button key={key} secondary={filter !== key} title={label} onPress={() => setFilter(key)} />)}</View></View>} renderItem={item => {

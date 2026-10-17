@@ -1,14 +1,16 @@
-import { useState } from 'react';
+import { useCallback } from 'react';
 import { Text, View } from 'react-native';
 import { Link, router, useLocalSearchParams } from 'expo-router';
-import { Brand, Button, Screen } from '@/components/sport/ui';
+import { Button, Screen } from '@/components/sport/ui';
+import { AccessScreen, QueryStatus } from '@/components/sport/access';
 import { ui } from '@/components/sport/styles';
-import { classes } from '@/data/sport';
+import { classesApi, entityId, referenceLabel } from '@/services/operations';
+import { useApiQuery } from '@/hooks/use-api-query';
 import { useAuth } from '@/context/auth';
 export default function ClassDetail() {
-  const { name } = useLocalSearchParams<{ name?: string }>();
-  const item = classes.find(c => c.name === name);
-  const { user } = useAuth();
-  const [booked, setBooked] = useState(false);
-  return <Screen><Brand /><Link href="/" style={ui.link}>← Trang chủ</Link>{item ? <View style={ui.card}><Text style={ui.eyebrow}>{item.category.toUpperCase()}</Text><Text style={ui.title}>{item.name}</Text><Text style={ui.body}>{item.detail}</Text><Text style={ui.body}>Khung giờ mẫu: {item.time}{'\n'}Huấn luyện viên: {item.coach}</Text><Text style={ui.body}>Đặt chỗ thử để trải nghiệm giao diện; chưa tạo lịch tại trung tâm.</Text>{booked && <Text accessibilityRole="alert" style={{ color: '#15803d', lineHeight: 24 }}>Đã ghi nhận đặt chỗ demo cho {user?.name} trong màn hình này.</Text>}<Button disabled={booked} title={booked ? 'Đã đặt chỗ demo ✓' : user ? 'Đặt chỗ thử' : 'Đăng nhập để đặt chỗ'} onPress={() => user ? setBooked(true) : router.push('/login')} /></View> : <><Text style={ui.title}>Không tìm thấy lớp học</Text><Button title="Về trang chủ" onPress={() => router.replace('/')} /></>}</Screen>;
+  const { id } = useLocalSearchParams<{ id?: string }>(); const { user, token } = useAuth();
+  const load = useCallback(() => classesApi.list(token!), [token]); const query = useApiQuery(load, !!token);
+  if (!user || !token) return <AccessScreen />;
+  const item = query.data?.find(record => entityId(record) === id);
+  return <Screen><Link href={{ pathname: '/workspace/[resource]', params: { resource: 'classes' } }} style={ui.link}>← Lớp học</Link><QueryStatus loading={query.loading} error={query.error} retry={query.reload} />{item ? <View style={ui.card}><Text style={ui.eyebrow}>{referenceLabel(item.subjectId)}</Text><Text style={ui.title}>{String(item.name || '')}</Text><Text style={ui.body}>Khóa học: {referenceLabel(item.courseId)}</Text><Text style={ui.body}>Huấn luyện viên: {referenceLabel(item.coachId)}</Text><Text style={ui.body}>Đăng ký mới sẽ chờ thanh toán; trung tâm xác nhận sau khi hoàn tất học phí.</Text>{['MEMBER', 'RECEPTIONIST', 'CENTER_MANAGER'].includes(user.role) && <Button title="Đăng ký lớp →" onPress={() => router.push({ pathname: '/workspace/[resource]/edit', params: { resource: 'class-registrations', classId: entityId(item) } })} />}<Button secondary title="Xem lịch lớp" onPress={() => router.push({ pathname: '/workspace/[resource]', params: { resource: 'schedules', classId: entityId(item) } })} /></View> : !query.loading && !query.error && <Text style={ui.body}>Không tìm thấy lớp học. Chọn lớp từ danh sách hiện tại.</Text>}</Screen>;
 }

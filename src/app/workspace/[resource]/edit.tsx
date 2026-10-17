@@ -18,10 +18,10 @@ function ResourceEditor({ resource, id, classId }: { resource: ResourceKey; id?:
   const actor = useActorProfile(needsActor);
   const actorId = actor.data ? entityId(actor.data) : '';
   const load = useCallback(async () => {
-    const records = await resourceApis[resource].list(token!);
+    const records = resource === 'rooms' && id ? [await resourceApis.rooms.get(token!, id)] : await resourceApis[resource].list(token!);
     if (!Array.isArray(records)) throw new Error('Danh sách từ máy chủ không hợp lệ.');
     return records;
-  }, [resource, token]);
+  }, [resource, token, id]);
   const query = useApiQuery(load, !!token && !!id && (!needsActor || !!actorId));
   if (!user || !token) return <AccessScreen />;
   const selected = query.data?.find(item => entityId(item) === id);
