@@ -1,6 +1,7 @@
 import { useRef, useState } from 'react';
 import { Modal, Text, View } from 'react-native';
 import { classRegistrationsApi, entityId, referenceId, type Entity } from '@/services/operations';
+import { paymentsApi } from '@/services/payments';
 import { Button } from './ui';
 import { ui } from './styles';
 export function CancelRegistration({ item, token, onCancelled }: { item: Entity; token: string; onCancelled: () => void }) {
@@ -12,7 +13,10 @@ export function CancelRegistration({ item, token, onCancelled }: { item: Entity;
     if (pending.current) return;
     pending.current = true; setBusy(true); setError('');
     try {
-      await classRegistrationsApi.update(token, entityId(item), { classId: referenceId(item.classId), memberId: referenceId(item.memberId), status: 'CANCELLED' });
+      const [registrations, payments] = await Promise.all([classRegistrationsApi.list(token), paymentsApi.list(token)]);
+      const current = registrations.find(record => entityId(record) === entityId(item));
+      if (current?.status !== 'PENDING_PAYMENT' || payments.some(payment => referenceId(payment.classRegistrationId) === entityId(item) && payment.status === 'SUCCESS')) throw new Error('Đăng ký không còn chờ thanh toán hoặc đã có giao dịch thành công. Làm mới trang và liên hệ trung tâm để được hỗ trợ.');
+      await classRegistrationsApi.update(token, entityId(item), { classId: referenceId(current.classId), memberId: referenceId(current.memberId), status: 'CANCELLED' });
       setOpen(false); onCancelled();
     } catch (e) { setError((e as Error).message); }
     finally { pending.current = false; setBusy(false); }

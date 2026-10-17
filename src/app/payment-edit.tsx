@@ -9,6 +9,8 @@ import { canManagePayments, currency, ownPayments, pendingPaymentForRegistration
 import { AccessScreen, QueryStatus } from '@/components/sport/access';
 import { Screen, Button } from '@/components/sport/ui';
 import { PaymentActions } from '@/components/sport/payment-actions';
+import { FlowSteps } from '@/components/sport/flow-steps';
+import { enrollmentSteps } from '@/utils/enrollment';
 import { ui } from '@/components/sport/styles';
 function PaymentForm({ token, item, registrations, selectedId, member, onRefresh }: { token: string; item?: Entity; registrations: Entity[]; selectedId?: string; member: boolean; onRefresh: () => void }) {
   const [registrationId, setRegistrationId] = useState(item ? referenceId(item.classRegistrationId) : selectedId || '');
@@ -32,10 +34,11 @@ export default function PaymentEditor() {
   useFocusEffect(useCallback(() => { reload(); }, [reload]));
   if (!user || !token) return <AccessScreen />;
   if (!canManagePayments(user.role)) return <AccessScreen denied />;
-  const existing = pendingPaymentForRegistration(query.data?.payments || [], registrationId);
+  const existing = query.data?.payments.find(record => !!registrationId && record.status === 'SUCCESS' && referenceId(record.classRegistrationId) === registrationId) || pendingPaymentForRegistration(query.data?.payments || [], registrationId);
   const selectedPaymentId = id || (existing ? entityId(existing) : undefined);
   const item = query.data?.payments.find(record => entityId(record) === selectedPaymentId);
   const registration = item ? registrationFor(item, query.data?.registrations || []) : undefined;
+  const alreadyPaid = !!item && query.data?.payments.some(record => record.status === 'SUCCESS' && referenceId(record.classRegistrationId) === referenceId(item.classRegistrationId));
   const eligible = payableRegistrations(query.data?.registrations || [], query.data?.payments || []);
-  return <Screen><Link href="/payments" style={ui.link}>← Thanh toán</Link><Text style={ui.title}>{selectedPaymentId ? 'Chi tiết thanh toán' : 'Yêu cầu thanh toán'}</Text><QueryStatus loading={query.loading || member && actor.loading} error={query.error || (member ? actor.error : null)} retry={() => { query.reload(); actor.reload(); }} />{member && actor.error && <Link href="/profile" style={ui.link}>Hoàn thiện hồ sơ hội viên →</Link>}{query.data && (selectedPaymentId && !item ? <Text style={ui.error}>Không tìm thấy thanh toán thuộc tài khoản này.</Text> : item && (item.status !== 'PENDING' || registration?.status === 'CANCELLED') ? <Text style={ui.body}>Yêu cầu này không còn cho phép chỉnh sửa. Quay lại danh sách để xem trạng thái mới nhất.</Text> : <PaymentForm key={selectedPaymentId || 'new'} token={token} item={item} registrations={eligible} selectedId={registrationId} member={member && registration?.status === 'PENDING_PAYMENT'} onRefresh={reload} />)}</Screen>;
+  return <Screen><Link href="/payments" style={ui.link}>← Thanh toán</Link><FlowSteps labels={enrollmentSteps} current={4} /><Text style={ui.title}>{selectedPaymentId ? 'Chi tiết thanh toán' : 'Yêu cầu thanh toán'}</Text><QueryStatus loading={query.loading || member && actor.loading} error={query.error || (member ? actor.error : null)} retry={() => { query.reload(); actor.reload(); }} />{member && actor.error && <Link href="/profile" style={ui.link}>Hoàn thiện hồ sơ hội viên →</Link>}{query.data && (selectedPaymentId && !item ? <Text style={ui.error}>Không tìm thấy thanh toán thuộc tài khoản này.</Text> : item && (item.status !== 'PENDING' || registration?.status === 'CANCELLED' || alreadyPaid) ? <View style={ui.card}><Text style={ui.heading}>{alreadyPaid ? 'Đăng ký đã có thanh toán thành công' : item.status === 'FAILED' ? 'Thanh toán chưa thành công' : 'Đăng ký không còn chờ thanh toán'}</Text><Text style={ui.body}>{currency(item.amount)} · {referenceLabel(registration?.classId)}</Text>{registration && <Button title={registration.status === 'CONFIRMED' ? 'Xem đăng ký và lịch học →' : 'Quay lại đăng ký để tiếp tục →'} onPress={() => router.push({ pathname: '/registration-detail', params: { id: entityId(registration) } })} />}</View> : <PaymentForm key={selectedPaymentId || 'new'} token={token} item={item} registrations={eligible} selectedId={registrationId} member={member && registration?.status === 'PENDING_PAYMENT'} onRefresh={reload} />)}</Screen>;
 }
