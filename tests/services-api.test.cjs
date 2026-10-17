@@ -8,7 +8,7 @@ function loadService(name, fetch = async () => ({ ok: true, status: 200, json: a
   const cache = {};
   function load(file) {
     if (cache[file]) return cache[file];
-    const context = { exports: {}, fetch, URL, AbortController, setTimeout, clearTimeout, TypeError, process: { env: {} }, require: dep => dep === 'react-native' ? { Platform: { OS: 'web' } } : load(path.posix.normalize(path.posix.join(path.posix.dirname(file), dep + '.ts'))) };
+    const context = { exports: {}, fetch, URL, AbortController, setTimeout, clearTimeout, TypeError, process: { env: {} }, require: dep => dep === 'react-native' ? { Platform: { OS: 'web' } } : load(dep.startsWith('@/') ? 'src/' + dep.slice(2) + '.ts' : path.posix.normalize(path.posix.join(path.posix.dirname(file), dep + '.ts'))) };
     cache[file] = context.exports;
     vm.runInNewContext(ts.transpileModule(fs.readFileSync(file, 'utf8'), { compilerOptions: { module: ts.ModuleKind.CommonJS } }).outputText, context);
     return context.exports;
@@ -106,4 +106,62 @@ test('member upcoming sessions exclude past and cancelled appointments in Bangko
   const { upcomingMemberSessions } = loadService('member-home');
   const items = [{ _id: 'past', date: '2026-10-17', startTime: '08:00', status: 'SCHEDULED' }, { _id: 'next', date: '2026-10-17', startTime: '10:00', status: 'SCHEDULED' }, { _id: 'cancel', date: '2026-10-18', startTime: '10:00', status: 'CANCELLED' }];
   assert.deepEqual(Array.from(upcomingMemberSessions(items, new Date('2026-10-17T02:00:00Z')), item => item._id), ['next']);
+});
+
+test('role workflows keep reception operations separate from coach teaching and manager setup', () => {
+  const scope = loadService('../utils/role-workflows');
+  assert.equal(scope.canReadResource('activity-logs', 'MEMBER'), false);
+  assert.equal(scope.canReadResource('workout-plans', 'RECEPTIONIST'), false);
+  assert.equal(scope.canReadResource('attendances', 'RECEPTIONIST'), true);
+  assert.equal(scope.canReadResource('classes', 'COACH'), true);
+  const records = [{ classId: 'own', memberId: 'm' }, { classId: 'other', memberId: 'other-m' }];
+  assert.equal(scope.scopeCoachRecords('attendances', records, [{ _id: 'own' }], []).length, 1);
+  assert.equal(scope.scopeCoachRecords('lesson-progress', records, [], [{ member: { _id: 'm' } }]).length, 1);
+  assert.throws(() => scope.assertCoachAssignment({ classId: 'other', memberId: 'm' }, 'coach', [{ _id: 'own', coachId: 'coach' }], [{ member: 'm', class: 'own' }]));
+  assert.throws(() => scope.assertCoachAssignment({ classId: 'own', memberId: 'foreign' }, 'coach', [{ _id: 'own', coachId: 'coach' }], [{ member: 'm', class: 'own' }]));
+});
+test('enrollment saves only after matching schedule confirmation and uses the correct member', async () => {
+  let posted;
+  const schedule = { _id: 's', classId: 'c', date: '2099-10-17', startTime: '08:00', endTime: '09:00', roomId: 'room', status: 'SCHEDULED' };
+  const service = loadService('enrollment', async (url, options) => {
+    const path = new URL(url).pathname;
+    if (options.method === 'POST') { posted = JSON.parse(options.body); return { ok: true, status: 201, json: async () => ({ success: true, data: { _id: 'r', ...posted, status: 'PENDING_PAYMENT' } }) }; }
+    const data = { '/api/class-registrations': [], '/api/classes': [{ _id: 'c', courseId: 'course' }], '/api/courses': [{ _id: 'course', price: 500000, status: 'ACTIVE' }], '/api/schedules': [schedule] }[path];
+    return { ok: true, status: 200, json: async () => ({ success: true, data }) };
+  });
+  const result = await service.saveEnrollment('token', { classId: 'c', memberId: 'm', confirmedSchedule: 's|2099-10-17|08:00|09:00|room' });
+  assert.deepEqual(posted, { classId: 'c', memberId: 'm' }); assert.equal(result.status, 'PENDING_PAYMENT');
+});
+test('changed or missing schedules block registration instead of submitting stale choices', async () => {
+  let writes = 0;
+  const service = loadService('enrollment', async (url, options) => {
+    if (options.method === 'POST') writes++;
+    const data = { '/api/class-registrations': [], '/api/classes': [{ _id: 'c', courseId: 'course' }], '/api/courses': [{ _id: 'course', price: 500000, status: 'ACTIVE' }], '/api/schedules': [] }[new URL(url).pathname];
+    return { ok: true, status: 200, json: async () => ({ success: true, data }) };
+  });
+  await assert.rejects(service.saveEnrollment('token', { classId: 'c', memberId: 'm', confirmedSchedule: 'old' }), error => error instanceof service.ScheduleChangedError);
+  assert.equal(writes, 0);
+});
+test('existing pending registration resumes but confirmed/cancelled registrations are never recreated', async () => {
+  for (const status of ['PENDING_PAYMENT', 'CONFIRMED', 'CANCELLED']) {
+    let writes = 0;
+    const service = loadService('enrollment', async (url, options) => {
+      if (options.method === 'POST') writes++;
+      return { ok: true, status: 200, json: async () => ({ success: true, data: [{ _id: 'r', classId: 'c', memberId: 'm', status }] }) };
+    });
+    const result = service.saveEnrollment('token', { classId: 'c', memberId: 'm', confirmedSchedule: 'unused' });
+    if (status === 'PENDING_PAYMENT') assert.equal((await result)._id, 'r'); else await assert.rejects(result);
+    assert.equal(writes, 0);
+  }
+});
+
+test('enrollment detects overlapping confirmed classes but allows adjacent sessions', () => {
+  const flow = loadService('../utils/enrollment');
+  const sessions = [{ _id: 'selected', classId: 'new', date: '2099-10-17', startTime: '08:00', endTime: '09:00', status: 'SCHEDULED' }, { _id: 'booked', classId: 'old', date: '2099-10-17', startTime: '08:30', endTime: '09:30', status: 'SCHEDULED' }];
+  const registrations = [{ memberId: 'm', classId: 'old', status: 'CONFIRMED' }];
+  assert.equal(flow.enrollmentConflicts(sessions, registrations, 'new', 'm').length, 1);
+  sessions[1].startTime = '09:00';
+  assert.equal(flow.enrollmentConflicts(sessions, registrations, 'new', 'm').length, 0);
+  sessions[1].startTime = '08:30'; registrations[0].status = 'PENDING_PAYMENT';
+  assert.equal(flow.enrollmentConflicts(sessions, registrations, 'new', 'm').length, 0);
 });

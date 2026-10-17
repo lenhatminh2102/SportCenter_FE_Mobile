@@ -74,3 +74,13 @@ test('member navigation keeps personal home separate from staff and auth screens
   assert.equal(nav.activeMemberTab('/workspace/classes/edit'), '/workspace/classes');
   assert.equal(nav.activeMemberTab('/notifications'), '');
 });
+
+test('reception workspace has its own landing and operational menu', () => {
+  const nav = load('src/utils/staff-navigation.ts');
+  assert.equal(nav.roleHome('RECEPTIONIST'), '/reception');
+  assert.equal(nav.isWorkspaceRole('RECEPTIONIST'), true);
+  const menu = nav.staffMenu('RECEPTIONIST');
+  assert.equal(menu.some(item => item.path === '/payments'), true);
+  assert.equal(menu.some(item => item.path === '/workspace/courses'), false);
+  assert.equal(menu.some(item => item.path === '/workspace/attendances'), true);
+});
