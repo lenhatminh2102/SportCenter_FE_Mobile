@@ -7,8 +7,11 @@ export function useApiQuery<T>(loader: () => Promise<T>, enabled = true, autoLoa
   useEffect(() => {
     if (!enabled || (!autoLoad && version === 0)) return;
     let active = true;
-    void loader().then(data => {
-      if (active) setState({ loader, version, data, error: null });
+    void Promise.resolve().then(() => {
+      if (!active) return;
+      return loader().then(data => {
+        if (active) setState({ loader, version, data, error: null });
+      });
     }).catch(error => {
       if (active) setState({ loader, version, data: null, error: error instanceof Error ? error : new Error('Yêu cầu thất bại.') });
     });

@@ -12,7 +12,11 @@ import { ui } from '@/components/sport/styles';
 import { colors } from '@/data/sport';
 export default function MemberHome() {
   const { user, token } = useAuth();
-  const load = useCallback(() => loadMemberHome(token!, user!.id), [token, user]);
+  const userId = user?.id;
+  const load = useCallback(async () => {
+    if (!token || !userId) throw new Error('Phiên đăng nhập đã kết thúc.');
+    return loadMemberHome(token, userId);
+  }, [token, userId]);
   const query = useApiQuery(load, !!token && user?.role === 'MEMBER', false); const { reload } = query;
   useFocusEffect(useCallback(() => { reload(); }, [reload]));
   if (!user || !token) return <Redirect href="/login" />;

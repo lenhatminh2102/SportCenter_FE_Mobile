@@ -17,8 +17,13 @@ export function Dashboard({ role }: { role: StaffRole }) {
   const { user, token } = useAuth();
   const inStaffShell = useStaffShell();
   const { width } = useWindowDimensions();
-  const load = useCallback(() => loadDashboard(role, user!.id, token!), [role, user, token]);
-  const query = useApiQuery(load, user?.role === role && !!token, false);
+  const userId = user?.id;
+  const userRole = user?.role;
+  const load = useCallback(async () => {
+    if (!userId || !token || userRole !== role) throw new Error('Phiên đăng nhập đã kết thúc.');
+    return loadDashboard(role, userId, token);
+  }, [role, userId, userRole, token]);
+  const query = useApiQuery(load, userRole === role && !!userId && !!token, false);
   const { reload } = query;
   useFocusEffect(useCallback(() => { reload(); }, [reload]));
   if (!user || !token) return <AccessScreen />;

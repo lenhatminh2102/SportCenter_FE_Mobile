@@ -18,21 +18,23 @@ import { DeleteResource } from '@/components/sport/delete-resource';
 import { ui } from '@/components/sport/styles';
 function ResourceList({ resource, courseId, classId }: { resource: ResourceKey; courseId?: string; classId?: string }) {
   const { user, token } = useAuth(); const inStaffShell = useStaffShell(); const memberShell = useMemberShell();
+  const userRole = user?.role;
   const definition = resources[resource]; const api = resourceApis[resource];
   const needsActor = user?.role === 'MEMBER' && personalResources.includes(resource) || user?.role === 'COACH' && ['classes', 'schedules', 'attendances', 'lesson-progress', 'workout-plans', 'workout-results'].includes(resource);
   const actor = useActorProfile(needsActor); const actorId = actor.data ? entityId(actor.data) : '';
   const [search, setSearch] = useState(''); const [allSchedules, setAllSchedules] = useState(false);
   const mine = resource === 'schedules' && user?.role === 'MEMBER' && !classId && !allSchedules;
   const load = useCallback(async () => {
-    const records = await (mine ? schedulesApi.my(token!) : resource === 'schedules' && user?.role === 'COACH' ? schedulesApi.coachMy(token!) : resourceApis[resource].list(token!));
+    if (!token || !userRole) throw new Error('Phiên đăng nhập đã kết thúc.');
+    const records = await (mine ? schedulesApi.my(token!) : resource === 'schedules' && userRole === 'COACH' ? schedulesApi.coachMy(token!) : resourceApis[resource].list(token!));
     if (!Array.isArray(records)) throw new Error('Danh sách từ máy chủ không hợp lệ.');
     const filtered = records.filter(item => (!courseId || resource !== 'classes' || referenceId(item.courseId) === courseId) && (!classId || resource !== 'schedules' || referenceId(item.classId) === classId));
-    if (user?.role === 'COACH' && ['attendances', 'lesson-progress'].includes(resource)) {
+    if (userRole === 'COACH' && ['attendances', 'lesson-progress'].includes(resource)) {
       const [classes, students] = await Promise.all([classesApi.list(token!), coachesApi.myStudents(token!)]);
       return scopeCoachRecords(resource, filtered, classes.filter(item => referenceId(item.coachId) === actorId), students);
     }
-    return needsActor ? filtered.filter(item => isOwnRecord(resource, user!.role, actorId, item)) : filtered;
-  }, [resource, token, mine, needsActor, actorId, user, courseId, classId]);
+    return needsActor ? filtered.filter(item => isOwnRecord(resource, userRole, actorId, item)) : filtered;
+  }, [resource, token, mine, needsActor, actorId, userRole, courseId, classId]);
   const query = useApiQuery(load, !!token && canReadResource(resource, user?.role) && (!needsActor || !!actorId), false); const { reload } = query;
   useFocusEffect(useCallback(() => { reload(); }, [reload]));
   const items = useMemo(() => (query.data || []).filter(item => `${titleFor(resource, item)} ${detailFor(resource, item)}`.toLocaleLowerCase('vi').includes(search.trim().toLocaleLowerCase('vi'))), [query.data, resource, search]);

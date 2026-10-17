@@ -13,7 +13,11 @@ export default function Notifications() {
   const { token, user } = useAuth();
   const [unread, setUnread] = useState(false);
   const [busy, setBusy] = useState(''); const [error, setError] = useState(''); const pending = useRef(false);
-  const load = useCallback(async () => ownNotifications(await notificationsApi.list(token!), user!.id), [token, user]);
+  const userId = user?.id;
+  const load = useCallback(async () => {
+    if (!token || !userId) throw new Error('Phiên đăng nhập đã kết thúc.');
+    return ownNotifications(await notificationsApi.list(token), userId);
+  }, [token, userId]);
   const query = useApiQuery(load, !!token, false);
   const { reload } = query;
   useFocusEffect(useCallback(() => { reload(); }, [reload]));
