@@ -147,3 +147,20 @@ Payment amounts always come from Course.price. The app does not send amount, sta
 109 mocked contract/permission/validation tests pass, covering the new endpoints, ownership joins, forbidden checkout URL schemes/hosts, missing room, tuition validation and backend failures. Expo lint, TypeScript and web export are checked. Successful staff/member writes, real gateway callbacks and native-device layouts still need manual validation with real test accounts; no payments or notifications were submitted to real users during checks.
 
 The supplied notifications/support/payment list APIs return broad datasets. Frontend filtering controls presentation, not authorization; the backend should enforce record ownership for list and mutation requests before production use. Sessions remain in memory. Web origins/API URLs and OAuth/SMTP secrets are not changed by this work.
+
+## Member homepage and payment fixes
+
+MEMBER logins now land on /member through /dashboard. Successful email registration signs in automatically; if that second request fails, the app confirms account creation and links to login without registering again. The public root redirects signed-in members to their personal home. Coach/manager routes remain distinct.
+
+The member home shows own confirmed classes, pending payments, unread notifications, next session and real class suggestions. A missing member profile prompts setup; unavailable datasets show a dash and an error, not fabricated zero totals. A stable member shell provides Home, Classes, My schedule and Account tabs without remounting the root navigator. Related pages return to the member home.
+
+Payment corrections:
+- Entering via a registration reuses its existing pending request instead of displaying an empty creation form.
+- Creating a request opens its detail directly. Amount still comes from BE.
+- Unsaved method changes disable checkout until saved; saving refreshes the request.
+- A separate prepare/open step opens VNPay directly from a fresh user gesture, avoiding an API await before web popup creation.
+- Server-confirmed statuses remain authoritative; no client-only payment success is generated.
+
+Local backend inspection found VNPAY_TMN_CODE, VNPAY_HASH_SECRET and VNPAY_RETURN_URL missing. Those must be configured on the backend to use sandbox checkout; no gateway transaction has been verified. The backend list/create/update ownership limitations documented above remain outside this frontend change.
+
+Validation: 116 tests including member scoping, onboarding, navigation, existing payment reuse and checkout gesture sequencing; Expo lint, TypeScript and web export. Native-device and real account/gateway flows still require manual testing.
