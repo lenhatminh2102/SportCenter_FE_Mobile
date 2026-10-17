@@ -17,7 +17,7 @@ test('staff roles have separate landing pages and menu entries', () => {
   const nav = load('src/utils/staff-navigation.ts');
   assert.equal(nav.roleHome('COACH'), '/coach');
   assert.equal(nav.roleHome('CENTER_MANAGER'), '/manager');
-  assert.equal(nav.roleHome('MEMBER'), '/account');
+  assert.equal(nav.roleHome('MEMBER'), '/member');
   assert.equal(nav.isStaffRole('RECEPTIONIST'), false);
   assert.equal(nav.staffMenu('COACH').some(item => item.path === '/members'), false);
   assert.equal(nav.staffMenu('CENTER_MANAGER').some(item => item.path === '/members'), true);
@@ -64,4 +64,13 @@ test('dashboard fetch keeps successful metrics when one endpoint fails', async (
   const result = await api.loadDashboard('CENTER_MANAGER', 'manager', 'token');
   assert.equal(result.errors.length, 1); assert.match(result.errors[0], /offline/);
   assert.equal(result.metrics[0].value, 0); assert.equal(result.week[0].count, null);
+});
+
+test('member navigation keeps personal home separate from staff and auth screens', () => {
+  const nav = load('src/utils/member-navigation.ts');
+  assert.equal(nav.isMemberPage('/member'), true); assert.equal(nav.isMemberPage('/payment-edit'), true);
+  assert.equal(nav.isMemberPage('/login'), false); assert.equal(nav.isMemberPage('/manager'), false);
+  assert.equal(nav.activeMemberTab('/class-detail'), '/workspace/classes');
+  assert.equal(nav.activeMemberTab('/workspace/classes/edit'), '/workspace/classes');
+  assert.equal(nav.activeMemberTab('/notifications'), '');
 });

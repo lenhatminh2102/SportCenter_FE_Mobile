@@ -64,3 +64,46 @@ test('server payment rejection does not become client success', async () => {
   const p = loadService('payments', async () => ({ ok: false, status: 403, json: async () => ({ success: false, message: 'Mock payment is disabled' }) }));
   await assert.rejects(p.paymentsApi.simulate('token', 'p', 'SUCCESS'), /Mock payment is disabled/);
 });
+
+test('payment shortcut reuses pending requests and excludes already charged registrations', () => {
+  const p = loadService('payments');
+  const payments = [{ _id: 'p', classRegistrationId: { _id: 'r' }, status: 'PENDING' }, { _id: 'old', classRegistrationId: 'retry', status: 'FAILED' }, { _id: 'paid', classRegistrationId: 'paid-r', status: 'SUCCESS' }];
+  assert.equal(p.pendingPaymentForRegistration(payments, 'r')._id, 'p');
+  assert.equal(p.pendingPaymentForRegistration(payments, 'retry'), undefined);
+  assert.equal(p.pendingPaymentForRegistration(payments, undefined), undefined);
+  const eligible = p.payableRegistrations([{ _id: 'r', status: 'PENDING_PAYMENT' }, { _id: 'retry', status: 'PENDING_PAYMENT' }, { _id: 'cancelled', status: 'CANCELLED' }, { _id: 'paid-r', status: 'PENDING_PAYMENT' }], payments);
+  assert.deepEqual(Array.from(eligible, item => item._id), ['retry']);
+});
+test('member homepage scopes account data and tolerates one unavailable dataset', async () => {
+  const responses = {
+    '/api/members/me': { _id: 'm', fullName: 'Test Member' },
+    '/api/classes': [{ _id: 'c', name: 'Yoga' }],
+    '/api/notifications': [{ userId: 'u', isRead: false }, { userId: 'other', isRead: false }],
+    '/api/class-registrations': [{ _id: 'r', memberId: 'm', status: 'PENDING_PAYMENT' }, { _id: 'foreign', memberId: 'other', status: 'CONFIRMED' }],
+    '/api/payments': [{ classRegistrationId: 'r', status: 'PENDING' }, { classRegistrationId: 'foreign', status: 'PENDING' }],
+  };
+  const home = loadService('member-home', async url => {
+    const path = new URL(url).pathname;
+    if (path === '/api/schedules/my') return { ok: false, status: 500, json: async () => ({ success: false, message: 'Schedule unavailable' }) };
+    return { ok: true, status: 200, json: async () => ({ success: true, data: responses[path] }) };
+  });
+  const data = await home.loadMemberHome('token', 'u');
+  assert.equal(data.unread, 1); assert.equal(data.registrations.length, 1); assert.equal(data.payments.length, 1);
+  assert.equal(data.schedules, null); assert.equal(data.classes.length, 1); assert.equal(data.errors.length, 1);
+});
+test('new member without profile can browse classes without loading personal billing', async () => {
+  const calls = [];
+  const home = loadService('member-home', async url => {
+    const path = new URL(url).pathname; calls.push(path);
+    if (path === '/api/members/me') return { ok: false, status: 404, json: async () => ({ success: false, message: 'No profile' }) };
+    return { ok: true, status: 200, json: async () => ({ success: true, data: [] }) };
+  });
+  const data = await home.loadMemberHome('token', 'u');
+  assert.equal(data.profileMissing, true); assert.equal(data.errors.length, 0); assert.equal(data.classes.length, 0);
+  assert.equal(data.payments, null); assert.equal(calls.includes('/api/payments'), false);
+});
+test('member upcoming sessions exclude past and cancelled appointments in Bangkok time', () => {
+  const { upcomingMemberSessions } = loadService('member-home');
+  const items = [{ _id: 'past', date: '2026-10-17', startTime: '08:00', status: 'SCHEDULED' }, { _id: 'next', date: '2026-10-17', startTime: '10:00', status: 'SCHEDULED' }, { _id: 'cancel', date: '2026-10-18', startTime: '10:00', status: 'CANCELLED' }];
+  assert.deepEqual(Array.from(upcomingMemberSessions(items, new Date('2026-10-17T02:00:00Z')), item => item._id), ['next']);
+});
