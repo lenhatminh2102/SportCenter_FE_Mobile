@@ -9,7 +9,7 @@ function modules(fetch) {
     if (cache[name]) return cache[name];
     const context = { exports: {}, fetch, process: { env: {} }, AbortController, setTimeout, clearTimeout, TypeError, require: dependency => {
       if (dependency === 'react-native') return { Platform: { OS: 'web' } };
-      const aliases = { './api': 'src/services/api.ts', './validation': 'src/utils/validation.ts', './training-resources': 'src/utils/training-resources.ts', '@/services/operations': 'src/services/operations.ts' };
+      const aliases = { './rooms': 'src/services/rooms.ts', './api': 'src/services/api.ts', './validation': 'src/utils/validation.ts', './training-resources': 'src/utils/training-resources.ts', '@/services/operations': 'src/services/operations.ts' };
       return load(aliases[dependency]);
     } };
     cache[name] = context.exports;
@@ -20,6 +20,7 @@ function modules(fetch) {
 }
 const id = '507f1f77bcf86cd799439011';
 const samples = {
+  rooms: { roomNumber: '001', name: 'Yoga Room', capacity: 20, status: 'ACTIVE' },
   classes: { name: 'Yoga Class', subjectId: id, courseId: id, coachId: id },
   'class-registrations': { classId: id, memberId: id, status: 'CANCELLED' },
   attendances: { memberId: id, classId: id, lessonId: id, date: '2026-10-14', status: 'PRESENT' },
@@ -29,9 +30,9 @@ const samples = {
   'workout-results': { workoutPlanId: id, memberId: id, result: 'Completed', comment: 'Good' },
   coaches: { userId: id, fullName: 'Coach Test', phone: '0901234567' },
   subjects: { name: 'Yoga' },
-  courses: { name: 'Yoga Basics', description: 'Intro', status: 'ACTIVE' },
+  courses: { name: 'Yoga Basics', description: 'Intro', price: 500000, status: 'ACTIVE' },
   lessons: { learningPathId: id, title: 'Lesson 1', description: 'Intro', order: 1 },
-  schedules: { classId: id, lessonId: id, date: '2026-10-14', startTime: '08:00', endTime: '09:00', status: 'SCHEDULED' },
+  schedules: { classId: id, lessonId: id, roomId: id, date: '2026-10-14', startTime: '08:00', endTime: '09:00', status: 'SCHEDULED' },
   'activity-logs': { userId: id, action: 'Created a lesson' },
 };
 for (const resource of Object.keys(samples)) {
@@ -135,4 +136,12 @@ test('optional workout class can be cleared without sending an invalid ObjectId'
     return { ok: true, status: 200, json: async () => ({ success: true, data: {} }) };
   });
   await operations.workoutPlansApi.update('token', id, { ...samples['workout-plans'], classId: '' });
+});
+
+test('new schedules require rooms and course tuition is a real nonnegative number', () => {
+  const { schema } = modules();
+  assert.ok(schema.validateResource('schedules', { ...samples.schedules, roomId: '' }, false).errors.roomId);
+  assert.equal(schema.validateResource('courses', { name: 'Yoga', price: '0', status: 'ACTIVE' }, false).payload.price, 0);
+  for (const price of ['', '-1', 'NaN', 'Infinity']) assert.ok(schema.validateResource('courses', { name: 'Yoga', price, status: 'ACTIVE' }, false).errors.price);
+  assert.ok(schema.validateResource('rooms', { roomNumber: '001', name: 'Yoga', capacity: '1.5', status: 'ACTIVE' }, false).errors.capacity);
 });
