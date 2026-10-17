@@ -27,6 +27,7 @@ export const resources: Record<ResourceKey, ResourceDefinition> = {
   schedules: { title: 'Lịch tập', singular: 'lịch tập', titleKey: 'date', fields: [
     { key: 'classId', label: 'Lớp học', type: 'id', relation: '/api/classes', required: true },
     { key: 'lessonId', label: 'Bài học', type: 'id', relation: '/api/lessons', required: true },
+    { key: 'roomId', label: 'Phòng tập', type: 'id', relation: '/api/rooms', required: true },
     { key: 'date', label: 'Ngày (YYYY-MM-DD)', type: 'date', required: true },
     { key: 'startTime', label: 'Giờ bắt đầu (HH:mm)', type: 'time', required: true },
     { key: 'endTime', label: 'Giờ kết thúc (HH:mm)', type: 'time', required: true },

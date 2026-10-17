@@ -28,7 +28,7 @@ export const subjectsApi = crud('/api/subjects', ['name']);
 export const coursesApi = crud('/api/courses', ['name', 'description', 'status']);
 export const lessonsApi = crud('/api/lessons', ['learningPathId', 'title', 'description', 'order']);
 export const schedulesApi = {
-  ...crud('/api/schedules', ['classId', 'lessonId', 'date', 'startTime', 'endTime', 'status']),
+  ...crud('/api/schedules', ['classId', 'lessonId', 'roomId', 'date', 'startTime', 'endTime', 'status']),
   my: (token: string) => request<Entity[]>('/api/schedules/my', { token }),
 };
 export const activityLogsApi = {

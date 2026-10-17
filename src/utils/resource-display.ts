@@ -15,7 +15,7 @@ export function detailFor(resource: ResourceKey, item: Entity): string {
     case 'subjects': return 'Môn thể thao trên hệ thống';
     case 'courses': return `${status}\n${String(item.description || '')}`;
     case 'lessons': return `Bài ${String(item.order)} · ${referenceLabel(item.learningPathId)}\n${String(item.description || '')}`;
-    case 'schedules': return `${referenceLabel(item.classId)} · ${referenceLabel(item.lessonId)}\n${status}`;
+    case 'schedules': return `${referenceLabel(item.classId)} · ${referenceLabel(item.lessonId)}\nPhòng: ${referenceLabel(item.roomId)} · ${status}`;
     case 'activity-logs': return `${referenceLabel(item.userId)}\n${item.createdAt ? new Date(String(item.createdAt)).toLocaleString('vi-VN', { timeZone: 'Asia/Bangkok' }) : ''}`;
     case 'classes': return `${referenceLabel(item.subjectId)} · ${referenceLabel(item.courseId)}\nHLV: ${referenceLabel(item.coachId)}`;
     case 'class-registrations': return `${referenceLabel(item.memberId)}\n${status}`;
